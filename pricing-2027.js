@@ -15,6 +15,9 @@
     const base=Math.floor(bags/groups),remainder=bags%groups;
     return Array.from({length:groups},(_,i)=>base+(i<remainder?1:0));
   }
+  const DEADLINES=Object.freeze({four:"2027-08-31",fifteenGroup:"2027-09-10"});
+  function taiwanDate(now){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(now||new Date());}
+  function checkDeadlines(input,now){const today=taiwanDate(now);const closed=[];for(const key of Object.keys(DEADLINES)){if(Number(input[key]||0)>0&&today>DEADLINES[key])closed.push(key);}return {today,closed};}
   function calculate(input){
     const four=integer(input.four||0,"6入4盒組");
     const ten=integer(input.ten||0,"6入10盒組");
@@ -36,5 +39,5 @@
     const bagAmount=bags*PRICES.bag;
     return {sixBoxes,fifteenBoxes,goods,bagAmount,bagAllocation,shippingSix,shippingFifteen,fifteenCartons,remoteSurcharge,shipping,total:goods+bagAmount+shipping+remoteSurcharge,requiresReview:false};
   }
-  return Object.freeze({PRICES,allocateBags,calculate});
+  return Object.freeze({PRICES,DEADLINES,taiwanDate,checkDeadlines,allocateBags,calculate});
 });
