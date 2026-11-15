@@ -1,0 +1,102 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>訂單查詢｜紀家烘焙坊 STILL JI</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f7f2e9;color:#49352b;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;padding:24px 16px}main{max-width:560px;margin:48px auto;background:#fffdf9;border:1px solid #e9dfd1;border-radius:22px;padding:clamp(22px,5vw,42px);box-shadow:0 12px 36px #49352b0c}h1{font-family:serif;letter-spacing:.12em;margin:8px 0 10px}.eyebrow{font-size:12px;color:#8a7b6d;letter-spacing:.18em}.muted{color:#70584a;font-size:14px;line-height:1.8}label{display:block;margin:20px 0 8px;font-weight:700;font-size:14px}input{width:100%;padding:13px;border:1px solid #d9cbb9;border-radius:10px;font-size:16px;background:white}button,.action{display:block;width:100%;text-align:center;border:0;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:20px;background:#7e2733;color:white}.action.secondary{background:#fff;color:#49352b;border:1px solid #b79a68}section{margin-top:30px;border-top:1px solid #e9dfd1;padding-top:22px}#result{margin-top:16px;line-height:1.8;font-size:14px}a{color:#7e2733}.fine{font-size:12px;color:#8a7b6d}</style><style>
+
+/* STILL JI V4 — consistent typography and promotional banner hierarchy */
+:root{--sj-font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+html,body,button,input,select,textarea{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,
+body p,body a,body span,body strong,body label,body small,
+.sj-nav-brand,.sj-nav-links,.sj-home-promo,.brand-product-title{
+  font-family:var(--sj-font)!important;
+}
+.sj-top-nav{font-family:var(--sj-font)!important;}
+.sj-nav-brand{font-size:clamp(1.02rem,1.5vw,1.25rem)!important;font-weight:700!important;letter-spacing:.045em!important;}
+.sj-nav-links a,.sj-nav-links button{font-size:.9rem!important;font-weight:600!important;letter-spacing:.015em!important;}
+.sj-home-promo{background:#fffdf9!important;border-color:#e7dcd0!important;box-shadow:0 5px 18px rgba(73,53,43,.04)!important;padding:clamp(22px,3vw,32px)!important;}
+.sj-home-promo .sj-promo-content{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:10px!important;width:100%!important;text-align:center!important;}
+.sj-home-promo .sj-promo-eyebrow{font-size:clamp(.73rem,1.2vw,.81rem)!important;letter-spacing:.1em!important;font-weight:700!important;text-align:center!important;}
+.sj-home-promo h2{font-size:clamp(1.35rem,2.5vw,1.75rem)!important;line-height:1.45!important;font-weight:800!important;letter-spacing:.035em!important;text-align:center!important;margin:0!important;}
+.sj-home-promo p{font-size:clamp(.92rem,1.45vw,1.03rem)!important;line-height:1.7!important;text-align:center!important;margin:0!important;}
+.sj-home-promo .sj-promo-small{font-size:clamp(.8rem,1.15vw,.88rem)!important;line-height:1.8!important;max-width:37rem!important;text-align:center!important;}
+.sj-home-promo .sj-promo-order{font-family:var(--sj-font)!important;font-size:.95rem!important;font-weight:700!important;line-height:1.5!important;margin:10px auto 0!important;padding:11px 22px!important;}
+@media(max-width:650px){
+ .sj-nav-links a,.sj-nav-links button{font-size:.83rem!important;}
+ .sj-home-promo{padding:22px 16px!important;}
+ .sj-home-promo h2{font-size:1.35rem!important;}
+ .sj-home-promo p{font-size:.92rem!important;}
+ .sj-home-promo .sj-promo-small{font-size:.81rem!important;}
+}
+
+</style>
+<style id="sj-v5-serif">
+/* V5: consistent warm serif, left-anchored navigation and compact page headers */
+:root{--sj-font:"Noto Serif TC","Songti TC","PMingLiU",serif;}
+html,body,button,input,select,textarea{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,body p,body a,body span,body strong,body label,body small{font-family:var(--sj-font)!important;}
+.sj-top-nav-inner{max-width:none!important;margin:0!important;padding-left:clamp(12px,2vw,30px)!important;justify-content:flex-start!important;}
+.sj-nav-brand,.sj-nav-links,.sj-nav-links a,.sj-nav-links button{font-family:var(--sj-font)!important;}
+.sj-nav-links{margin-left:0!important;justify-content:flex-start!important;flex:0 1 auto!important;}
+.sj-nav-brand{margin-left:0!important;}
+@media(max-width:700px){.sj-top-nav-inner{padding-left:12px!important;}.sj-nav-brand{margin-left:0!important;}.sj-nav-links{justify-content:flex-start!important;}}
+</style><style id="sj-v6-balanced-readable">
+/* V6: readable interface typography; serif display headings; balanced header */
+:root{--sj-font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;--sj-heading:"Noto Serif TC","Songti TC","PMingLiU",serif;}
+html,body,button,input,select,textarea,body p,body a,body span,body strong,body label,body small{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,.brand-product-title{font-family:var(--sj-heading)!important;font-weight:700!important;}
+.sj-top-nav-inner{max-width:none!important;margin:0!important;padding:8px clamp(14px,2.2vw,36px)!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;}
+.sj-nav-brand{margin:0!important;order:0!important;font-family:var(--sj-font)!important;font-weight:800!important;flex-shrink:0!important;}
+.sj-nav-links{margin-left:auto!important;flex:0 1 auto!important;order:1!important;justify-content:flex-end!important;gap:5px!important;}
+.sj-nav-links a,.sj-nav-links button{font-family:var(--sj-font)!important;font-weight:700!important;font-size:.91rem!important;}
+@media(max-width:700px){.sj-top-nav-inner{flex-wrap:wrap!important;gap:5px!important;padding:8px 12px!important;}.sj-nav-links{flex-basis:100%!important;width:100%!important;justify-content:flex-end!important;overflow-x:auto!important;}.sj-nav-links a,.sj-nav-links button{font-size:.83rem!important;padding:8px 9px!important;}}
+</style></head><body><main><a href="index.html">返回首頁</a><p class="eyebrow">STILL JI · 紀家烘焙坊</p><h1>訂單查詢</h1><p class="muted">輸入訂單編號與訂購時的手機號碼，即可查看訂購商品、訂單狀態與已核定金額。</p><form id="lookupForm"><label for="orderId">訂單編號</label><input id="orderId" required autocomplete="off" placeholder="ORD 開頭的訂單編號" maxlength="43"><label for="phone">訂購人手機號碼</label><input id="phone" required type="tel" inputmode="numeric" autocomplete="tel" placeholder="09XXXXXXXX" maxlength="10" pattern="09[0-9]{8}"><button type="submit" id="submit">查詢訂單</button></form><div id="result" role="status" aria-live="polite"></div><p class="fine">查詢結果依紀家訂單紀錄顯示；實際配送進度以黑貓宅急便查詢結果為準。</p><section><h2>忘記訂單編號？</h2><p class="muted">請透過官方 LINE 聯繫客服，核對訂購資料後協助查詢。為保護個資，無法僅憑手機號碼公開訂單。</p><a class="action secondary" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener noreferrer">聯繫官方 LINE 客服</a></section></main><script>
+const API_URL = ''; // 請填入新 TEST 整合版部署網址
+document.getElementById('lookupForm').addEventListener('submit', function(e) {
+ e.preventDefault();
+ const id=document.getElementById('orderId').value.trim(), phone=document.getElementById('phone').value.trim(), result=document.getElementById('result'), btn=document.getElementById('submit');
+ if(!/^ORD[A-Za-z0-9_-]{5,40}$/.test(id)||!/^09\d{8}$/.test(phone)){result.textContent='請檢查訂單編號與手機格式。';return;}
+ result.textContent='查詢中…';btn.disabled=true;
+ const cb='stillJiLookup_'+Date.now()+'_'+Math.floor(Math.random()*100000), script=document.createElement('script');
+ let finished=false;
+ const timer=setTimeout(()=>finish(null),12000);
+ function finish(data){if(finished)return;finished=true;clearTimeout(timer);delete window[cb];script.remove();btn.disabled=false;
+ if(!data){result.textContent='查詢逾時，請稍後再試或聯繫官方 LINE。';return;}
+ if(data.status==='ok'&&data.found===true){
+   const order=data.order||{}, items=Array.isArray(data.items)?data.items:[];
+   result.replaceChildren();
+   const heading=document.createElement('h2');heading.textContent='✅ 您的訂單明細';result.appendChild(heading);
+   const add=(label,value)=>{const row=document.createElement('p');const strong=document.createElement('strong');strong.textContent=label+'：';row.append(strong,document.createTextNode(String(value||'—')));result.appendChild(row);};
+   add('訂單編號',order.orderId);add('訂購方式',order.mode);add('預訂日期',order.date);if(order.timeSlot)add('預訂時段',order.timeSlot);
+   const title=document.createElement('h3');title.textContent='訂購商品';result.appendChild(title);
+   if(items.length){
+     const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse';
+     const head=document.createElement('tr');['商品／規格','盒數'].forEach(t=>{const th=document.createElement('th');th.textContent=t;th.style.cssText='padding:8px 4px;text-align:left;border-bottom:1px solid #ddd';head.appendChild(th)});table.appendChild(head);
+     items.forEach(item=>{const tr=document.createElement('tr');[item.product+' '+item.spec,item.quantity+' 盒'].forEach(t=>{const td=document.createElement('td');td.textContent=t;td.style.cssText='padding:9px 4px;border-bottom:1px solid #eee';tr.appendChild(td)});table.appendChild(tr)});result.appendChild(table);
+   } else {const note=document.createElement('p');note.textContent='這筆訂單尚無可顯示的商品明細，請聯繫客服確認。';result.appendChild(note)}
+   if(items.length){const hint=document.createElement('p');hint.className='muted';hint.style.cssText='font-size:12px;margin-top:10px';hint.textContent='商品明細顯示訂購數量；優惠、運費及提袋等費用均以「正式應付金額」為準。';result.appendChild(hint)}
+   const labels={PENDING_REVIEW:'待人工確認（尚未成立，請勿轉帳）',CONFIRMED:'訂單已成立',CANCELLED:'已取消',REJECTED:'未受理'};
+   add('訂單狀態',labels[order.orderStatus]||order.orderStatus||'待人工確認');
+   add('正式應付金額',order.orderStatus==='CONFIRMED'&&order.total!==null&&order.total!==''?'NT$ '+order.total:'尚未核定，請勿轉帳');
+   if(order.mode==='宅配到府'){
+     const box=document.createElement('div');box.style.cssText='margin-top:22px;padding:16px;background:#f5faf7;border:1px solid #cde7d8;border-radius:12px';
+     const heading=document.createElement('h3');heading.textContent='📦 宅配配送資訊';heading.style.margin='0 0 10px';box.appendChild(heading);
+     const tracking=String(order.trackingNumber||'').trim();
+     if(tracking){
+       const p=document.createElement('p');p.style.margin='0 0 8px';const strong=document.createElement('strong');strong.textContent='黑貓快遞單號：';p.append(strong,document.createTextNode(tracking));box.appendChild(p);
+       const copy=document.createElement('button');copy.type='button';copy.textContent='複製快遞單號';copy.style.cssText='margin-top:10px;background:#fff;color:#28674c;border:1px solid #7cb99c';
+       copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(tracking);copy.textContent='已複製 ✓';}catch(e){window.prompt('請複製快遞單號：',tracking);}});box.appendChild(copy);
+       const a=document.createElement('a');a.className='action';a.href='https://www.t-cat.com.tw/inquire/trace.aspx';a.target='_blank';a.rel='noopener noreferrer';a.textContent='前往黑貓查詢配送進度';box.appendChild(a);
+       const note=document.createElement('p');note.className='fine';note.textContent='開啟黑貓網站後，請貼上快遞單號查詢；實際貨況以黑貓系統為準。';box.appendChild(note);
+     }else{
+       const p=document.createElement('p');p.className='muted';p.style.margin='0';p.textContent='尚未提供宅配單號。出貨並登錄單號後，可回到此頁查詢。';box.appendChild(p);
+     }
+     result.appendChild(box);
+   }
+ }
+ else if(data.status==='ok'&&data.found===false){result.textContent='找不到符合的訂單，請檢查編號與手機號碼，或聯繫客服。';}
+ else{result.textContent='目前無法完成查詢，請稍後再試或聯繫客服。';}
+ }
+ window[cb]=finish;script.onerror=()=>finish(null);
+ script.src=API_URL+'?orderId='+encodeURIComponent(id)+'&phone='+encodeURIComponent(phone)+'&callback='+encodeURIComponent(cb);
+ document.body.appendChild(script);
+});
+</script></body></html>
