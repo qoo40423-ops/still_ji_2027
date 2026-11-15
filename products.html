@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f2e9">
+<title>產品介紹｜紀家烘焙坊</title>
+<style>
+:root{--cream:#f7f2e9;--wine:#901820;--cocoa:#49352b;--soft:#725e51;--gold:#b79a68;--line:#e6dac9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--cocoa)}
+a{color:inherit}.container{width:min(1120px,calc(100% - 36px));margin:auto}
+header{padding:18px 0;border-bottom:1px solid var(--line);background:#faf6ef}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-family:serif;color:var(--wine);font-weight:700;font-size:clamp(1.05rem,2.5vw,1.5rem);letter-spacing:.07em}
+.brand img{width:46px;height:46px;object-fit:contain}
+.top-links{display:flex;gap:16px;align-items:center;font-size:.85rem}.top-links a{text-decoration:none}.top-links .order{background:var(--wine);color:white;padding:11px 17px;border-radius:99px}
+.hero{text-align:center;padding:68px 0 46px}.eyebrow{color:var(--gold);font:700 .7rem Georgia,serif;letter-spacing:.18em}
+h1,h2,h3{font-family:"Noto Serif TC","Songti TC",serif}h1{font-size:clamp(2rem,5vw,3.2rem);color:var(--wine);letter-spacing:.1em;margin:14px 0}
+.hero p{line-height:1.9;color:var(--soft);font-size:.94rem}.chips{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:24px auto 0}
+.chips a{text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:9px 16px;background:#fffdfa;font-size:.84rem}
+.product{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(22px,5vw,58px);align-items:start;padding:38px 0 54px;border-top:1px solid var(--line)}
+.product-photo{border-radius:18px;overflow:hidden;background:#efe6d9;box-shadow:0 12px 35px #49352b16}
+.product-photo img{display:block;width:100%;aspect-ratio:4/4;object-fit:cover}
+.product-details{padding-top:10px}.product h2{color:var(--wine);font-size:clamp(1.6rem,3vw,2.35rem);margin:13px 0}
+.product-description{line-height:1.9;color:var(--soft)}.product-feature{font-size:.85rem;color:#987b54;letter-spacing:.04em;margin:22px 0}
+.price-panel{border:1px solid var(--line);border-radius:15px;background:#fffcf7;padding:20px;margin:26px 0 15px}
+.price-panel h3{font-size:1.05rem;margin:0 0 16px;display:flex;justify-content:space-between;gap:12px}
+.pending{font:500 .7rem sans-serif;color:#9b8165;border:1px solid #dfd0bd;border-radius:99px;padding:5px 8px}
+.price-grid{display:grid;grid-template-columns:1fr auto;gap:13px;color:var(--soft);font-size:.86rem}
+.price-grid strong{color:var(--wine)}small{display:block;color:#948475;font-size:.7rem;line-height:1.7;margin-top:14px}
+.nutrition{border:1px solid var(--line);border-radius:13px;background:#fffcf7;overflow:hidden}
+.nutrition summary{cursor:pointer;list-style:none;padding:16px 19px;font-weight:700;color:var(--cocoa);display:flex;justify-content:space-between}
+.nutrition summary::-webkit-details-marker{display:none}.nutrition-inner{padding:0 19px 20px}.nutrition-inner p{font-size:.78rem;line-height:1.8;color:var(--soft)}
+table{width:100%;border-collapse:collapse;font-size:.83rem;margin:12px 0}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}th{background:#f4ede3}td:last-child,th:last-child{text-align:right}
+.footer{border-top:1px solid var(--line);text-align:center;padding:32px 10px 48px;color:var(--soft);font-size:.83rem;line-height:2}
+.footer a{color:var(--wine);margin:0 8px}
+@media(max-width:700px){.product{grid-template-columns:1fr;gap:17px;padding:26px 0 42px}.product-photo img{aspect-ratio:5/4}.hero{padding:46px 0 30px}.header-row{justify-content:center}.top-links{width:100%;justify-content:center}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.nutrition-label-photo{display:block;width:100%;max-width:550px;height:auto;margin:12px auto;border:1px solid var(--line);border-radius:9px;cursor:zoom-in}
+.price-grid strong{text-align:right}
+.product-diet{display:inline-block;margin:.25rem 0 .65rem;padding:.3rem .7rem;border-radius:999px;background:#edf5e9;color:#38643b;font-size:.85rem;font-weight:700;letter-spacing:.04em}
+</style>
+<style id="nutrition-tables-polish">
+.nutrition-inner{padding:0 18px 20px}
+.nutrition-serving{display:flex;justify-content:space-between;gap:12px;padding:13px 10px;background:#f2ebe2;border-bottom:1px solid #e6dac9;color:#49352b;font-size:.9rem}
+.nutrition-meta{display:grid;grid-template-columns:1fr auto;gap:9px;padding:14px 10px;color:#725e51;font-size:.85rem}
+.nutrition-meta strong{font-weight:500;color:#49352b}
+.nutrition table{width:100%;margin:0 0 12px;font-size:.84rem}
+.nutrition th{background:#f7f2e9;color:#49352b}
+.nutrition th,.nutrition td{padding:10px;border-bottom:1px solid #e6dac9}
+.nutrition th:last-child,.nutrition td:last-child{text-align:right;white-space:nowrap}
+.nutrition-source{font-size:.76rem!important;margin-top:14px}
+.nutrition-original-link{display:inline-block;font-size:.8rem;color:#901820;text-underline-offset:3px;margin-top:5px}
+</style>
+<style id="social-icons-and-nutrition-refinement">
+.social-icons{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:14px 0 0}
+.footer .social-icon-link{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;margin:0;border:1px solid #e6dac9;border-radius:999px;background:#fffdf9;color:#901820;text-decoration:none;font-size:.83rem;transition:background .2s,border-color .2s}
+.footer .social-icon-link:hover{background:#f0e5d9;border-color:#b79a68}
+.social-icon-link svg{width:20px;height:20px;flex-shrink:0}
+.nutrition-meta{grid-template-columns:1fr auto}
+</style>
+<style id="product-shelf-life-and-cta">
+.shelf-life{display:flex;justify-content:space-between;gap:14px;margin-top:16px;padding:13px 0 0;border-top:1px solid var(--line);font-size:.87rem;line-height:1.7;color:var(--soft)}
+.shelf-life strong{color:var(--cocoa);white-space:nowrap}.shelf-life span{text-align:right}.shelf-life small{margin:0;font-size:.74rem;color:#8c7b6b}
+.allergen-note{border-top:1px solid var(--line);padding-top:13px;margin-top:12px;color:var(--cocoa)}
+.allergen-note strong{font-size:.85rem;color:var(--wine)}
+.allergen-note p{margin:7px 0 0;line-height:1.8}
+.product-order-button{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;margin-top:18px;padding:14px 20px;border-radius:999px;background:var(--wine);color:#fff!important;font-size:.93rem;font-weight:700;letter-spacing:.12em;text-decoration:none;transition:background .2s,transform .2s}
+.product-order-button:hover{background:#6d1119;transform:translateY(-1px)}
+.product-order-button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+</style><style>
+
+/* STILL JI V4 — consistent typography and promotional banner hierarchy */
+:root{--sj-font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+html,body,button,input,select,textarea{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,
+body p,body a,body span,body strong,body label,body small,
+.sj-nav-brand,.sj-nav-links,.sj-home-promo,.brand-product-title{
+  font-family:var(--sj-font)!important;
+}
+.sj-top-nav{font-family:var(--sj-font)!important;}
+.sj-nav-brand{font-size:clamp(1.02rem,1.5vw,1.25rem)!important;font-weight:700!important;letter-spacing:.045em!important;}
+.sj-nav-links a,.sj-nav-links button{font-size:.9rem!important;font-weight:600!important;letter-spacing:.015em!important;}
+.sj-home-promo{background:#fffdf9!important;border-color:#e7dcd0!important;box-shadow:0 5px 18px rgba(73,53,43,.04)!important;padding:clamp(22px,3vw,32px)!important;}
+.sj-home-promo .sj-promo-content{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:10px!important;width:100%!important;text-align:center!important;}
+.sj-home-promo .sj-promo-eyebrow{font-size:clamp(.73rem,1.2vw,.81rem)!important;letter-spacing:.1em!important;font-weight:700!important;text-align:center!important;}
+.sj-home-promo h2{font-size:clamp(1.35rem,2.5vw,1.75rem)!important;line-height:1.45!important;font-weight:800!important;letter-spacing:.035em!important;text-align:center!important;margin:0!important;}
+.sj-home-promo p{font-size:clamp(.92rem,1.45vw,1.03rem)!important;line-height:1.7!important;text-align:center!important;margin:0!important;}
+.sj-home-promo .sj-promo-small{font-size:clamp(.8rem,1.15vw,.88rem)!important;line-height:1.8!important;max-width:37rem!important;text-align:center!important;}
+.sj-home-promo .sj-promo-order{font-family:var(--sj-font)!important;font-size:.95rem!important;font-weight:700!important;line-height:1.5!important;margin:10px auto 0!important;padding:11px 22px!important;}
+@media(max-width:650px){
+ .sj-nav-links a,.sj-nav-links button{font-size:.83rem!important;}
+ .sj-home-promo{padding:22px 16px!important;}
+ .sj-home-promo h2{font-size:1.35rem!important;}
+ .sj-home-promo p{font-size:.92rem!important;}
+ .sj-home-promo .sj-promo-small{font-size:.81rem!important;}
+}
+
+</style>
+<style id="sj-v5-serif-header">
+/* V5: consistent warm serif, left-anchored navigation and compact page headers */
+:root{--sj-font:"Noto Serif TC","Songti TC","PMingLiU",serif;}
+html,body,button,input,select,textarea{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,body p,body a,body span,body strong,body label,body small{font-family:var(--sj-font)!important;}
+.sj-top-nav-inner{max-width:none!important;margin:0!important;padding-left:clamp(12px,2vw,30px)!important;justify-content:flex-start!important;}
+.sj-nav-brand,.sj-nav-links,.sj-nav-links a,.sj-nav-links button{font-family:var(--sj-font)!important;}
+.sj-nav-links{margin-left:0!important;justify-content:flex-start!important;flex:0 1 auto!important;}
+.sj-nav-brand{margin-left:0!important;}
+@media(max-width:700px){.sj-top-nav-inner{padding-left:12px!important;}.sj-nav-brand{margin-left:0!important;}.sj-nav-links{justify-content:flex-start!important;}}
+
+header{padding:7px 0!important;min-height:65px;display:flex;align-items:center;}
+header .container{width:auto!important;max-width:none!important;margin:0!important;padding-left:clamp(12px,2vw,30px)!important;padding-right:16px!important;flex:1;}
+.header-row{justify-content:flex-start!important;flex-wrap:nowrap!important;gap:clamp(16px,2vw,30px)!important;}
+.brand{font-size:clamp(1.02rem,1.5vw,1.25rem)!important;letter-spacing:.045em!important;}
+.brand img{width:38px!important;height:38px!important;}
+.top-links{margin-left:0!important;gap:12px!important;font-size:.9rem!important;}
+.top-links .order{padding:9px 13px!important;}
+@media(max-width:700px){.header-row{flex-wrap:wrap!important;gap:4px 12px!important;}.top-links{width:100%!important;justify-content:flex-start!important;}}
+</style><style id="sj-v6-balanced-readable">
+/* V6: readable interface typography; serif display headings; balanced header */
+:root{--sj-font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;--sj-heading:"Noto Serif TC","Songti TC","PMingLiU",serif;}
+html,body,button,input,select,textarea,body p,body a,body span,body strong,body label,body small{font-family:var(--sj-font)!important;}
+body h1,body h2,body h3,body h4,body h5,body h6,.brand-product-title{font-family:var(--sj-heading)!important;font-weight:700!important;}
+.sj-top-nav-inner{max-width:none!important;margin:0!important;padding:8px clamp(14px,2.2vw,36px)!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;}
+.sj-nav-brand{margin:0!important;order:0!important;font-family:var(--sj-font)!important;font-weight:800!important;flex-shrink:0!important;}
+.sj-nav-links{margin-left:auto!important;flex:0 1 auto!important;order:1!important;justify-content:flex-end!important;gap:5px!important;}
+.sj-nav-links a,.sj-nav-links button{font-family:var(--sj-font)!important;font-weight:700!important;font-size:.91rem!important;}
+@media(max-width:700px){.sj-top-nav-inner{flex-wrap:wrap!important;gap:5px!important;padding:8px 12px!important;}.sj-nav-links{flex-basis:100%!important;width:100%!important;justify-content:flex-end!important;overflow-x:auto!important;}.sj-nav-links a,.sj-nav-links button{font-size:.83rem!important;padding:8px 9px!important;}}
+header .container{width:100%!important;max-width:none!important;margin:0!important;padding:0 clamp(14px,2.2vw,36px)!important;}.header-row{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;}.brand{font-family:var(--sj-font)!important;font-weight:800!important;}.top-links{margin-left:auto!important;justify-content:flex-end!important;font-family:var(--sj-font)!important;font-weight:700!important;}@media(max-width:700px){.header-row{flex-wrap:wrap!important;}.top-links{width:100%!important;justify-content:flex-end!important;}}</style></head>
+<body>
+<header><div class="container header-row">
+<a class="brand" href="index.html"><span>紀家烘焙坊</span><img src="images/stillji-logo-transparent.png" alt="Still Ji Logo"></a>
+<nav class="top-links"><a href="index.html">返回首頁</a><a class="order" href="index.html?view=order">前往訂購</a></nav>
+</div></header>
+<main class="container">
+<section class="hero">
+<div class="eyebrow">STILL JI · OUR PASTRIES</div>
+<h1>每一口，都是紀家的用心</h1>
+<p>從經典蛋黃酥到傳統手作糕點，<br>讓你在送禮與日常之間，找到剛剛好的好滋味。</p>
+<div class="chips"><a href="#p1">蛋黃酥</a><a href="#p2">土鳳梨酥</a><a href="#p3">老婆餅</a><a href="#p4">太陽餅</a></div>
+</section>
+
+<section class="product" id="p1">
+  <div class="product-photo"><img src="images/gift-box-detail.jpg" alt="紀家烘焙坊蛋黃酥實品照" loading="lazy"></div>
+  <div class="product-details">
+    <div class="eyebrow">EGG YOLK PASTRY · 01</div>
+    <h2>蛋黃酥</h2>
+    <p class="product-diet" aria-label="飲食分類：蛋奶素">🌿 蛋奶素</p>
+    <p class="product-description">金黃酥皮與鹹甜交織的經典滋味。</p>
+    <p class="product-feature">紅土鹹蛋黃 × 細緻豆沙 × 層層酥皮</p>
+    <div class="price-panel">
+      <h3>商品售價</h3>
+      <div class="price-grid"><span>單入</span><strong>不提供單入販售</strong><span>6 入禮盒</span><strong>NT$ 300</strong><span>12 入禮盒</span><strong>NT$ 600</strong><span>15 入禮盒</span><strong>NT$ 750</strong></div>
+      <div class="shelf-life"><strong>有效期限</strong><span>常溫保存 7 天<br><small>以實際購買商品標示為準</small></span></div>
+    </div>
+    <details class="nutrition">
+      <summary>營養標示 <span aria-hidden="true">＋</span></summary>
+      <div class="nutrition-inner">
+        <div class="nutrition-serving"><strong>營養標示</strong><span>每份</span></div>
+        <div class="nutrition-meta"><span>每一份量</span><strong>60 公克</strong></div>
+        <table aria-label="蛋黃酥營養標示，每份含量"><thead><tr><th scope="col">營養項目</th><th scope="col">每份含量</th></tr></thead><tbody><tr><td>熱量</td><td>259 大卡</td></tr><tr><td>蛋白質</td><td>5.1 公克</td></tr><tr><td>脂肪</td><td>13.8 公克</td></tr><tr><td>　飽和脂肪</td><td>6.5 公克</td></tr><tr><td>　反式脂肪</td><td>0.0 公克</td></tr><tr><td>碳水化合物</td><td>28.1 公克</td></tr><tr><td>　糖</td><td>6 公克</td></tr><tr><td>鈉</td><td>53 毫克</td></tr></tbody></table>
+        <div class="allergen-note"><strong>過敏原提醒</strong><p>本產品含有小麥麵粉、蛋、牛奶製品、大豆製品、芝麻，不適合對其過敏體質者食用。</p></div>
+      </div>
+    </details>
+<a class="product-order-button" href="index.html?view=order" aria-label="前往訂購">點我訂購 <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="product" id="p2">
+  <div class="product-photo"><img src="images/pineapple-cake.jpg" alt="紀家烘焙坊土鳳梨酥實品照" loading="lazy"></div>
+  <div class="product-details">
+    <div class="eyebrow">PINEAPPLE PASTRY · 02</div>
+    <h2>土鳳梨酥</h2>
+    <p class="product-diet" aria-label="飲食分類：蛋奶素">🌿 蛋奶素</p>
+    <p class="product-description">酸甜果香，來自土鳳梨的自然風味。</p>
+    <p class="product-feature">土鳳梨餡帶有較鮮明的果酸與果香，喜歡酸甜口感的客人可以試試看。</p>
+    <div class="price-panel">
+      <h3>商品售價</h3>
+      <div class="price-grid"><span>單顆</span><strong>NT$ 40</strong><span>12 入禮盒</span><strong>NT$ 460</strong></div>
+      <div class="shelf-life"><strong>有效期限</strong><span>常溫保存 14 天<br><small>以實際購買商品標示為準</small></span></div>
+    </div>
+    <details class="nutrition">
+      <summary>營養標示 <span aria-hidden="true">＋</span></summary>
+      <div class="nutrition-inner">
+        <div class="nutrition-serving"><strong>營養標示</strong><span>每份</span></div>
+        <div class="nutrition-meta"><span>每一份量</span><strong>45 公克</strong><span>本包裝含</span><strong>12 份</strong></div>
+        <table aria-label="土鳳梨酥營養標示，每份含量"><thead><tr><th scope="col">營養項目</th><th scope="col">每份含量</th></tr></thead><tbody><tr><td>熱量</td><td>199 大卡</td></tr><tr><td>蛋白質</td><td>2 公克</td></tr><tr><td>脂肪</td><td>8 公克</td></tr><tr><td>　飽和脂肪</td><td>3 公克</td></tr><tr><td>　反式脂肪</td><td>0 公克</td></tr><tr><td>碳水化合物</td><td>29 公克</td></tr><tr><td>　糖</td><td>7 公克</td></tr><tr><td>鈉</td><td>20 毫克</td></tr></tbody></table>
+        <div class="allergen-note"><strong>過敏原提醒</strong><p>本產品含有小麥麵粉、蛋、牛奶製品，不適合對其過敏體質者食用。</p></div>
+      </div>
+    </details>
+<a class="product-order-button" href="index.html?view=order" aria-label="前往訂購">點我訂購 <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="product" id="p3">
+  <div class="product-photo"><img src="images/moon-cake-purple.jpg" alt="紀家烘焙坊老婆餅實品照" loading="lazy"></div>
+  <div class="product-details">
+    <div class="eyebrow">SWEETHEART CAKE · 03</div>
+    <h2>老婆餅</h2>
+    <p class="product-diet" aria-label="飲食分類：純素">🌿 純素</p>
+    <p class="product-description">細緻酥皮，帶來溫柔的傳統糕點風味。</p>
+    <p class="product-feature">層次酥皮 × 經典甜餡</p>
+    <div class="price-panel">
+      <h3>商品售價</h3>
+      <div class="price-grid"><span>單片</span><strong>NT$ 35</strong><span>12 入禮盒</span><strong>NT$ 400</strong></div>
+      <div class="shelf-life"><strong>有效期限</strong><span>常溫保存 7 天<br><small>以實際購買商品標示為準</small></span></div>
+    </div>
+    <details class="nutrition">
+      <summary>營養標示 <span aria-hidden="true">＋</span></summary>
+      <div class="nutrition-inner">
+        <div class="nutrition-serving"><strong>營養標示</strong><span>每份</span></div>
+        <div class="nutrition-meta"><span>每一份量</span><strong>60 公克</strong><span>本包裝含</span><strong>12 份</strong></div>
+        <table aria-label="老婆餅營養標示，每份含量"><thead><tr><th scope="col">營養項目</th><th scope="col">每份含量</th></tr></thead><tbody><tr><td>熱量</td><td>207 大卡</td></tr><tr><td>蛋白質</td><td>13.7 公克</td></tr><tr><td>脂肪</td><td>12.6 公克</td></tr><tr><td>　飽和脂肪</td><td>1.7 公克</td></tr><tr><td>　反式脂肪</td><td>0 公克</td></tr><tr><td>碳水化合物</td><td>28.6 公克</td></tr><tr><td>　糖</td><td>12.5 公克</td></tr><tr><td>鈉</td><td>52 毫克</td></tr></tbody></table>
+        <div class="allergen-note"><strong>過敏原提醒</strong><p>本產品含有麩質穀類製品、牛奶製品，不適合對其過敏體質者食用。</p></div>
+      </div>
+    </details>
+<a class="product-order-button" href="index.html?view=order" aria-label="前往訂購">點我訂購 <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="product" id="p4">
+  <div class="product-photo"><img src="images/moon-cake-red.jpg" alt="紀家烘焙坊太陽餅實品照" loading="lazy"></div>
+  <div class="product-details">
+    <div class="eyebrow">SUN CAKE · 04</div>
+    <h2>太陽餅</h2>
+    <p class="product-diet" aria-label="飲食分類：純素">🌿 純素</p>
+    <p class="product-description">香酥外皮與甜香內餡的台式糕點。</p>
+    <p class="product-feature">酥香口感 × 經典風味</p>
+    <div class="price-panel">
+      <h3>商品售價</h3>
+      <div class="price-grid"><span>單片</span><strong>NT$ 35</strong><span>12 入禮盒</span><strong>NT$ 400</strong></div>
+      <div class="shelf-life"><strong>有效期限</strong><span>常溫保存 7 天<br><small>以實際購買商品標示為準</small></span></div>
+    </div>
+    <details class="nutrition">
+      <summary>營養標示 <span aria-hidden="true">＋</span></summary>
+      <div class="nutrition-inner">
+        <div class="nutrition-serving"><strong>營養標示</strong><span>每份</span></div>
+        <div class="nutrition-meta"><span>每一份量</span><strong>50 公克</strong><span>本包裝含</span><strong>12 份</strong></div>
+        <table aria-label="太陽餅營養標示，每份含量"><thead><tr><th scope="col">營養項目</th><th scope="col">每份含量</th></tr></thead><tbody><tr><td>熱量</td><td>208 大卡</td></tr><tr><td>蛋白質</td><td>3 公克</td></tr><tr><td>脂肪</td><td>9.3 公克</td></tr><tr><td>　飽和脂肪</td><td>2 公克</td></tr><tr><td>　反式脂肪</td><td>0 公克</td></tr><tr><td>碳水化合物</td><td>31.7 公克</td></tr><tr><td>　糖</td><td>9.3 公克</td></tr><tr><td>鈉</td><td>17 毫克</td></tr></tbody></table>
+        <div class="allergen-note"><strong>過敏原提醒</strong><p>本產品含有麩質穀類製品、牛奶製品，不適合對其過敏體質者食用。</p></div>
+      </div>
+    </details>
+<a class="product-order-button" href="index.html?view=order" aria-label="前往訂購">點我訂購 <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+</main>
+<footer class="footer">紀家烘焙坊 · STILL JI<br>彰化市三民路402-2號<br><div class="social-icons">
+<a class="social-icon-link" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.3c-5.1 0-9.2 3.2-9.2 7.2 0 3.6 3.2 6.5 7.6 7.1l-.6 3.1 4-3.1c4.2-.6 7.4-3.5 7.4-7.1 0-4-4.1-7.2-9.2-7.2Z" fill="currentColor"/><path d="M6.6 9v3.7h2M10 9v3.7m1.8 0V9l2.2 3.7V9m4.1 0h-2.3v3.7h2.3m-2.3-1.9h1.8" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>LINE</span></a>
+<a class="social-icon-link" href="https://www.facebook.com/JiPastry" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.1 0 2.25.2 2.25.2v2.47H15.2c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg><span>Facebook</span></a>
+<a class="social-icon-link" href="https://www.instagram.com/still_ji/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17.6" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram</span></a>
+</div></footer>
+</body></html>
