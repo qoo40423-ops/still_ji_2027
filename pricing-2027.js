@@ -26,15 +26,15 @@
     const bagAllocation=allocateBags(fifteenGroup,bags);
     const shippingSix=150*four+170*ten+bagAllocation.reduce((sum,n)=>sum+(n<=4?170:210),0);
     const sixBoxes=4*four+10*ten+15*fifteenGroup;
-    const fifteenShipping=fifteenBoxes===0||fifteenBoxes%5===0?0:fifteenBoxes%5<=2?170:210;
+    const fifteenShipping=fifteenBoxes===0?0:fifteenBoxes<5?(fifteenBoxes<=2?170:210):0;
     const shippingFifteen=fifteenShipping;
-    // 15入滿5盒免基本運費；以5盒為一箱，剩餘盒數另計。
+    // 15入滿5盒免基本運費；非整箱餘數與多箱規則仍待確認。
     const shipping=shippingSix+shippingFifteen;
     const remoteBoxes=four+ten+fifteenGroup; // 6入固定組合一組一箱
     const remoteSurcharge=remote?remoteBoxes*10:0; // 15入偏遠費待確認，暫不計入
     const goods=sixBoxes*PRICES.six+fifteenBoxes*PRICES.fifteen;
     const bagAmount=bags*PRICES.bag;
-    return {sixBoxes,fifteenBoxes,goods,bagAmount,bagAllocation,shippingSix,shippingFifteen,remoteSurcharge,shipping,total:goods+bagAmount+shipping+remoteSurcharge,requiresReview:fifteenBoxes>0&&remote};
+    return {sixBoxes,fifteenBoxes,goods,bagAmount,bagAllocation,shippingSix,shippingFifteen,remoteSurcharge,shipping,total:goods+bagAmount+shipping+remoteSurcharge,requiresReview:(fifteenBoxes>=5&&fifteenBoxes%5!==0)||(fifteenBoxes>0&&remote)};
   }
   return Object.freeze({PRICES,allocateBags,calculate});
 });
