@@ -142,10 +142,8 @@ function createOrder2027(data){
   try{
     const sh=sheet_(order.method);
     // Idempotency: repeated submits return existing order without consuming capacity twice.
-    if(sh.getLastRow()>1){
-      const existing=allRows_().find(r=>String(r[22])===order.requestId);
-      if(existing)return {ok:true,orderId:String(existing[0]),duplicate:true};
-    }
+    const existing=allRows_().find(r=>String(r[22])===order.requestId);
+    if(existing)return {ok:true,orderId:String(existing[0]),duplicate:true};
     const used=usage_(order.date);
     if(used+order.pieces>CONFIG.CAPACITY)throw Error('該日期剩餘產能不足：剩餘 '+Math.max(0,CONFIG.CAPACITY-used)+' 顆');
     const id='SJ27-'+Utilities.formatDate(new Date(),CONFIG.TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
