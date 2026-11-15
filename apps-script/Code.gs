@@ -1,40 +1,57 @@
 /**
  * STILL JI 2027 Mid-Autumn - Apps Script backend (TEST template)
- * Standalone Google Spreadsheet; one worksheet: 訂單總表; one order per row.
+ * Standalone Google Spreadsheet; 自取訂單 / 宅配訂單 / 每日產能統計.
  * Script Properties: SPREADSHEET_ID. Deploy as Web App only after testing.
  * IMPORTANT: Do not deploy as public write API until abuse controls are in place.
  */
 const CONFIG = Object.freeze({
-  SHEET: '訂單總表',
+  PICKUP: '自取訂單',
+  DELIVERY: '宅配訂單',
+  SUMMARY: '每日產能統計',
   CAPACITY: 4800,
   TZ: 'Asia/Taipei',
   HEADERS: ['訂單編號','建立時間','訂購方式','姓名','電話','製作日期','出貨日期','取貨日期','商品明細JSON','6入盒數','15入盒數','蛋黃酥顆數','盤數(進位)','商品金額','提袋金額','運費','偏遠加價','應付總額','付款狀態','訂單狀態','備註','黑貓單號','客戶請求識別碼']
 });
 function setup2027(){
   const ss=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID'));
-  let sh=ss.getSheetByName(CONFIG.SHEET);
-  if(!sh)sh=ss.insertSheet(CONFIG.SHEET);
-  if(sh.getLastRow()===0)sh.appendRow(CONFIG.HEADERS);
-  else {
+  for(const name of [CONFIG.PICKUP,CONFIG.DELIVERY]){
+    let sh=ss.getSheetByName(name);
+    if(!sh)sh=ss.insertSheet(name);
+    if(sh.getLastRow()===0)sh.appendRow(CONFIG.HEADERS);
     const h=sh.getRange(1,1,1,CONFIG.HEADERS.length).getDisplayValues()[0];
-    if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error('表頭與 2027 範本不一致，已停止以避免覆寫既有資料');
+    if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error(name+' 表頭不一致，為避免覆寫資料已停止');
+    sh.setFrozenRows(1);
+    sh.getRange(1,1,1,CONFIG.HEADERS.length).setFontWeight('bold');
   }
-  sh.setFrozenRows(1);
-  sh.getRange(1,1,1,CONFIG.HEADERS.length).setFontWeight('bold');
-  return '2027 訂單總表已準備完成';
+  let summary=ss.getSheetByName(CONFIG.SUMMARY);
+  if(!summary)summary=ss.insertSheet(CONFIG.SUMMARY);
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('系統忙碌');
+  try{refreshCapacitySummary_();}finally{lock.releaseLock();}
+  return '自取訂單、宅配訂單、每日產能統計已建立';
 }
 function requiredProperty_(key){
   const value=PropertiesService.getScriptProperties().getProperty(key);
   if(!value)throw Error('缺少 Script Property: '+key);
   return value;
 }
-function sheet_(){
-  const sh=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID')).getSheetByName(CONFIG.SHEET);
-  if(!sh)throw Error('請先執行 setup2027');
+function sheet_(method){
+  const name=method==='自取'?CONFIG.PICKUP:method==='宅配'?CONFIG.DELIVERY:null;
+  if(!name)throw Error('訂購方式錯誤');
+  const sh=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID')).getSheetByName(name);
+  if(!sh)throw Error('請先執行 setup2027：'+name);
   const h=sh.getRange(1,1,1,CONFIG.HEADERS.length).getDisplayValues()[0];
-  if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error('訂單總表表頭不符');
+  if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error(name+' 表頭不符');
   return sh;
 }
+function dateCell_(value){
+  if(value instanceof Date)return Utilities.formatDate(value,CONFIG.TZ,'yyyy-MM-dd');
+  return String(value==null?'':value).trim();
+}
+function orderRows_(sh){
+  return sh.getLastRow()<2?[]:sh.getRange(2,1,sh.getLastRow()-1,CONFIG.HEADERS.length).getValues();
+}
+function allRows_(){return orderRows_(sheet_('自取')).concat(orderRows_(sheet_('宅配')));}
 function n_(x,name){const v=Number(x);if(!Number.isSafeInteger(v)||v<0)throw Error(name+'必須為非負整數');return v;}
 function text_(x,max){const s=String(x==null?'':x).trim();if(s.length>max)throw Error('輸入字數超過限制');return s;}
 function validDate_(s){
@@ -82,10 +99,39 @@ function normalizedOrder_(data){
   return {method,name,phone,date,six,fifteen,pieces,goods,bagAmount,shipping:shippingSix+shipping15,remoteFee,total:goods+bagAmount+shippingSix+shipping15+remoteFee,detail,requestId:text_(data.requestId,100),notes:text_(data.notes,300)};
 }
 function activeStatus_(status){return !['已取消','取消','作廢','退款完成'].includes(String(status).trim());}
-function usage_(sh,date){
-  if(sh.getLastRow()<2)return 0;
-  const rows=sh.getRange(2,1,sh.getLastRow()-1,CONFIG.HEADERS.length).getValues();
-  return rows.reduce((sum,r)=>sum+(String(r[5]).trim()===date&&activeStatus_(r[19])?Number(r[11])||0:0),0);
+function usage_(date){
+  return allRows_().reduce((sum,r)=>sum+(dateCell_(r[5])===date&&activeStatus_(r[19])?Number(r[11])||0:0),0);
+}
+function refreshCapacitySummary_(){
+  const ss=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID'));
+  const sh=ss.getSheetByName(CONFIG.SUMMARY);
+  if(!sh)throw Error('請先執行 setup2027');
+  const map={};
+  for(const [method,rows] of [['自取',orderRows_(sheet_('自取'))],['宅配',orderRows_(sheet_('宅配'))]]){
+    for(const r of rows){
+      const date=dateCell_(r[5]);
+      if(!/^2027-\d{2}-\d{2}$/.test(date)||!activeStatus_(r[19]))continue;
+      const pieces=Number(r[11])||0;
+      if(!map[date])map[date]={pickup:0,delivery:0};
+      map[date][method==='自取'?'pickup':'delivery']+=pieces;
+    }
+  }
+  const values=[['製作日期','自取顆數','宅配顆數','已使用顆數','已使用盤數(進位)','剩餘顆數','每日上限','狀態']];
+  Object.keys(map).sort().forEach(date=>{
+    const p=map[date].pickup,d=map[date].delivery,total=p+d;
+    values.push([date,p,d,total,Math.ceil(total/60),Math.max(0,CONFIG.CAPACITY-total),CONFIG.CAPACITY,total>CONFIG.CAPACITY?'超量':total===CONFIG.CAPACITY?'額滿':'可接單']);
+  });
+  sh.clearContents();
+  sh.getRange(1,1,values.length,values[0].length).setValues(values);
+  sh.setFrozenRows(1);
+  sh.getRange(1,1,1,values[0].length).setFontWeight('bold');
+  return values.length-1;
+}
+/** Manual refresh after editing a status, date or quantity in the spreadsheet. */
+function refreshCapacitySummary2027(){
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('系統忙碌');
+  try{return refreshCapacitySummary_();}finally{lock.releaseLock();}
 }
 /** Called only from trusted server-side order creation flow. */
 function createOrder2027(data){
@@ -94,18 +140,18 @@ function createOrder2027(data){
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))throw Error('系統忙碌，請稍後重試');
   try{
-    const sh=sheet_();
+    const sh=sheet_(order.method);
     // Idempotency: repeated submits return existing order without consuming capacity twice.
     if(sh.getLastRow()>1){
-      const rows=sh.getRange(2,1,sh.getLastRow()-1,CONFIG.HEADERS.length).getValues();
-      const existing=rows.find(r=>String(r[22])===order.requestId);
+      const existing=allRows_().find(r=>String(r[22])===order.requestId);
       if(existing)return {ok:true,orderId:String(existing[0]),duplicate:true};
     }
-    const used=usage_(sh,order.date);
+    const used=usage_(order.date);
     if(used+order.pieces>CONFIG.CAPACITY)throw Error('該日期剩餘產能不足：剩餘 '+Math.max(0,CONFIG.CAPACITY-used)+' 顆');
     const id='SJ27-'+Utilities.formatDate(new Date(),CONFIG.TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
     sh.appendRow([id,new Date(),order.method,order.name,order.phone,order.date,order.method==='宅配'?order.date:'',order.method==='自取'?order.date:'',order.detail,order.six,order.fifteen,order.pieces,Math.ceil(order.pieces/60),order.goods,order.bagAmount,order.shipping,order.remoteFee,order.total,'未付款','待確認',order.notes,'',order.requestId]);
     SpreadsheetApp.flush();
+    refreshCapacitySummary_();
     return {ok:true,orderId:id,productionDate:order.date,pieces:order.pieces,total:order.total};
   }finally{lock.releaseLock();}
 }
@@ -114,6 +160,6 @@ function capacityForDate2027(date){
   validDate_(date);
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))throw Error('系統忙碌');
-  try{const used=usage_(sheet_(),date);return {date,limit:CONFIG.CAPACITY,used,remaining:Math.max(0,CONFIG.CAPACITY-used),usedPans:Math.ceil(used/60)};}
+  try{const used=usage_(date);return {date,limit:CONFIG.CAPACITY,used,remaining:Math.max(0,CONFIG.CAPACITY-used),usedPans:Math.ceil(used/60)};}
   finally{lock.releaseLock();}
 }
