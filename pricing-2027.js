@@ -15,9 +15,22 @@
     const base=Math.floor(bags/groups),remainder=bags%groups;
     return Array.from({length:groups},(_,i)=>base+(i<remainder?1:0));
   }
-  const DEADLINES=Object.freeze({four:"2027-08-31",fifteenGroup:"2027-09-10"});
-  function taiwanDate(now){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(now||new Date());}
-  function checkDeadlines(input,now){const today=taiwanDate(now);const closed=[];for(const key of Object.keys(DEADLINES)){if(Number(input[key]||0)>0&&today>DEADLINES[key])closed.push(key);}return {today,closed};}
+  // These are last selectable SHIPPING dates, not order placement deadlines.
+  const LAST_SHIPPING_DATES=Object.freeze({four:"2027-08-31",fifteenGroup:"2027-09-10"});
+  const DAILY_CAPACITY_PIECES=4800;
+  function shippingDateStatus(input,date){
+    if(!/^2027-\\d{2}-\\d{2}$/.test(date||""))return {valid:false,message:"請選擇 2027 年的出貨日期"};
+    const d=new Date(date+"T00:00:00Z");
+    if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==date)return {valid:false,message:"出貨日期無效"};
+    if(d.getUTCDay()===0||d.getUTCDay()===6)return {valid:false,message:"宅配週六、週日不出貨，請選擇平日"};
+    if(Number(input.four||0)>0&&date>LAST_SHIPPING_DATES.four)return {valid:false,message:"6 入 4 盒組最晚出貨日為 2027/08/31"};
+    if(Number(input.fifteenGroup||0)>0&&date>LAST_SHIPPING_DATES.fifteenGroup)return {valid:false,message:"6 入 15 盒組最晚出貨日為 2027/09/10"};
+    return {valid:true,message:""};
+  }
+  function piecesForOrder(input){
+    const four=integer(input.four||0,"6入4盒組"),ten=integer(input.ten||0,"6入10盒組"),group=integer(input.fifteenGroup||0,"6入15盒組"),fifteen=integer(input.fifteenBoxes||0,"15入盒數");
+    return (four*4+ten*10+group*15)*6+fifteen*15;
+  }
   function calculate(input){
     const four=integer(input.four||0,"6入4盒組");
     const ten=integer(input.ten||0,"6入10盒組");
@@ -39,5 +52,5 @@
     const bagAmount=bags*PRICES.bag;
     return {sixBoxes,fifteenBoxes,goods,bagAmount,bagAllocation,shippingSix,shippingFifteen,fifteenCartons,remoteSurcharge,shipping,total:goods+bagAmount+shipping+remoteSurcharge,requiresReview:false};
   }
-  return Object.freeze({PRICES,DEADLINES,taiwanDate,checkDeadlines,allocateBags,calculate});
+  return Object.freeze({PRICES,LAST_SHIPPING_DATES,DAILY_CAPACITY_PIECES,shippingDateStatus,piecesForOrder,allocateBags,calculate});
 });
