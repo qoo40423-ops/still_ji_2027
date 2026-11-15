@@ -84,6 +84,10 @@ function normalizedOrder_(data){
   }else{
     if(four||ten||group)throw Error('自取不可填宅配組合');
     if(bags)throw Error('自取贈袋尚未定案，暫不接受提袋數');
+    const pickupTime=text_(data.pickupTime,10);
+    if(pickupTime!=='上午'&&pickupTime!=='下午')throw Error('請選擇提貨時段');
+    if(date==='2027-09-15'&&pickupTime!=='上午')throw Error('中秋節當天僅開放上午10點前提貨');
+    if((six>0&&fifteen===0&&six<8)||(fifteen>0&&six===0&&fifteen<3)||(six>0&&fifteen>0&&six*6+fifteen*15<42))throw Error('未達訂單最小數量標準，僅能現場購買，敬請見諒');
   }
   const pieces=six*6+fifteen*15;
   if(!pieces||pieces>CONFIG.CAPACITY)throw Error('訂單顆數必須介於1至4800顆');
@@ -95,7 +99,7 @@ function normalizedOrder_(data){
   const remoteFee=remote?(four+ten+group+cartons15)*10:0;
   const goods=six*300+fifteen*750;
   const bagAmount=bags*20;
-  const detail=JSON.stringify({four,ten,fifteenGroup:group,bags,bagSplit,remote});
+  const detail=JSON.stringify({four,ten,fifteenGroup:group,bags,bagSplit,remote,pickupTime:method==='自取'?text_(data.pickupTime,10):''});
   return {method,name,phone,date,six,fifteen,pieces,goods,bagAmount,shipping:shippingSix+shipping15,remoteFee,total:goods+bagAmount+shippingSix+shipping15+remoteFee,detail,requestId:text_(data.requestId,100),notes:text_(data.notes,300)};
 }
 function activeStatus_(status){return !['已取消','取消','作廢','退款完成'].includes(String(status).trim());}
