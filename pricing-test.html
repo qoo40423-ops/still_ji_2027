@@ -12,8 +12,8 @@
 <label for="bags">6 入不織布提袋（個數）</label><input id="bags" type="number" min="0" step="1" value="6">
 <label for="remote">宜蘭、花蓮、台東</label><input id="remote" type="checkbox">
 </div><button id="calc" type="button">計算金額</button><div id="result" role="status" aria-live="polite"></div>
-<p><small>尚待確認：15 入滿箱後的零散盒數、15 入偏遠加價，以及非 15 盒組的提袋加購方式。遇到這些情況不得直接以試算金額收款。</small></p>
+<p><small>15 入宅配至少 4 盒、每箱最多 10 盒，每箱運費 $210；宜花東每箱加 $10。尚待確認：非 6 入 15 盒組的提袋加購方式及離島配送。</small></p>
 </main><script src="pricing-2027.js"></script><script>
-function show(){const fields=["four","ten","fifteenGroup","fifteenBoxes","bags"];const data={};fields.forEach(id=>data[id]=document.getElementById(id).value);data.remote=document.getElementById("remote").checked;const output=document.getElementById("result");try{const x=StillJi2027.calculate(data);output.className=x.requiresReview?"warn":"";output.textContent="6 入禮盒："+x.sixBoxes+" 盒\n15 入禮盒："+x.fifteenBoxes+" 盒\n15 盒組提袋分配："+(x.bagAllocation.join("、")||"無")+"\n商品金額：$"+x.goods+"\n提袋金額：$"+x.bagAmount+"\n6 入運費：$"+x.shippingSix+"\n15 入運費（暫算）：$"+x.shippingFifteen+"\n宜花東加價（6入）：$"+x.remoteSurcharge+"\n總額（暫算）：$"+x.total+(x.requiresReview?"\n⚠️ 本組合含尚待確認的運費條件，不可直接收款。":"");}catch(e){output.className="warn";output.textContent="⚠️ "+e.message;}}
+function show(){const fields=["four","ten","fifteenGroup","fifteenBoxes","bags"];const data={};fields.forEach(id=>data[id]=document.getElementById(id).value);data.remote=document.getElementById("remote").checked;const output=document.getElementById("result");try{const x=StillJi2027.calculate(data);output.className=x.requiresReview?"warn":"";output.textContent="6 入禮盒："+x.sixBoxes+" 盒\n15 入禮盒："+x.fifteenBoxes+" 盒\n15 盒組提袋分配："+(x.bagAllocation.join("、")||"無")+"\n商品金額：$"+x.goods+"\n提袋金額：$"+x.bagAmount+"\n6 入運費：$"+x.shippingSix+"\n15 入運費（"+x.fifteenCartons+" 箱）：$"+x.shippingFifteen+"\n宜花東加價：$"+x.remoteSurcharge+"\n總額（暫算）：$"+x.total+(x.requiresReview?"\n⚠️ 本組合含尚待確認的運費條件，不可直接收款。":"");}catch(e){output.className="warn";output.textContent="⚠️ "+e.message;}}
 document.getElementById("calc").addEventListener("click",show);show();
 </script></body></html>
