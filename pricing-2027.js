@@ -19,7 +19,7 @@
   const LAST_SHIPPING_DATES=Object.freeze({four:"2027-08-31",fifteenGroup:"2027-09-10"});
   const DAILY_CAPACITY_PIECES=4800;
   function shippingDateStatus(input,date){
-    if(!/^2027-\\d{2}-\\d{2}$/.test(date||""))return {valid:false,message:"請選擇 2027 年的出貨日期"};
+    if(!/^2027-\d{2}-\d{2}$/.test(date||""))return {valid:false,message:"請選擇 2027 年的出貨日期"};
     const d=new Date(date+"T00:00:00Z");
     if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==date)return {valid:false,message:"出貨日期無效"};
     if(d.getUTCDay()===0||d.getUTCDay()===6)return {valid:false,message:"宅配週六、週日不出貨，請選擇平日"};
@@ -31,13 +31,14 @@
     const four=integer(input.four||0,"6入4盒組"),ten=integer(input.ten||0,"6入10盒組"),group=integer(input.fifteenGroup||0,"6入15盒組"),fifteen=integer(input.fifteenBoxes||0,"15入盒數");
     return (four*4+ten*10+group*15)*6+fifteen*15;
   }
+  function remoteFromAddress(address){return /(?:宜蘭縣|花蓮縣|臺東縣|台東縣)/.test(String(address||"").replace(/\s/g,""));}
   function calculate(input){
     const four=integer(input.four||0,"6入4盒組");
     const ten=integer(input.ten||0,"6入10盒組");
     const fifteenGroup=integer(input.fifteenGroup||0,"6入15盒組");
     const fifteenBoxes=integer(input.fifteenBoxes||0,"15入盒數");
     const bags=integer(input.bags||0,"不織布提袋");
-    const remote=Boolean(input.remote);
+    const remote=remoteFromAddress(input.address);
     if(bags>0&&!fifteenGroup)throw Error("提袋分配規則僅確認6入15盒組，其他組合需先確認");
     const bagAllocation=allocateBags(fifteenGroup,bags);
     const shippingSix=150*four+170*ten+bagAllocation.reduce((sum,n)=>sum+(n<=4?170:210),0);
@@ -52,5 +53,5 @@
     const bagAmount=bags*PRICES.bag;
     return {sixBoxes,fifteenBoxes,goods,bagAmount,bagAllocation,shippingSix,shippingFifteen,fifteenCartons,remoteSurcharge,shipping,total:goods+bagAmount+shipping+remoteSurcharge,requiresReview:false};
   }
-  return Object.freeze({PRICES,LAST_SHIPPING_DATES,DAILY_CAPACITY_PIECES,shippingDateStatus,piecesForOrder,allocateBags,calculate});
+  return Object.freeze({PRICES,LAST_SHIPPING_DATES,DAILY_CAPACITY_PIECES,shippingDateStatus,piecesForOrder,remoteFromAddress,allocateBags,calculate});
 });
