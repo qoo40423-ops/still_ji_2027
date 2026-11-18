@@ -792,7 +792,7 @@ function sj27PublicCreate_(p,respond){
   let used=0;
   [['門市自取',3,9,17],['宅配到府',3,12,24]].forEach(([n,dcol,pcol,scol])=>{const sheet=ss.getSheetByName(n);if(!sheet||sheet.getLastRow()<2)return;sheet.getRange(2,1,sheet.getLastRow()-1,scol).getValues().forEach(v=>{const d=v[dcol-1] instanceof Date?Utilities.formatDate(v[dcol-1],'Asia/Taipei','yyyy-MM-dd'):String(v[dcol-1]);if(d===date&&!['已取消','取消','作廢'].includes(String(v[scol-1])))used+=Number(v[pcol-1])||0;});});
   if(used+pieces>4800)throw Error('當日剩餘產能不足');
-  const row=sh.getLastRow()+1;sh.getRange(row,kind==='pickup'?6:5).setNumberFormat('@');sh.getRange(row,1,1,width).setValues([values]);
+  const row=sjNextRow_(sh);sh.getRange(row,kind==='pickup'?6:5).setNumberFormat('@');sh.getRange(row,1,1,width).setValues([values]);
   return respond('TEST 訂單建立成功！訂單編號：'+id+'。請於 72 小時內完成匯款並通知店家。',true);
  }catch(err){Logger.log('PUBLIC_TEST_ORDER_REJECTED '+String(err));return respond('訂單未成立：'+String(err.message||err).replace(/[<>&"']/g,''),false);}
  finally{lock.releaseLock();}
