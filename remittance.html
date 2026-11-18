@@ -33,14 +33,13 @@ const form=document.getElementById('remittanceForm');
 const last5=document.getElementById('last5');
 last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').slice(0,5)});
 // 完成 TEST Web App 部署與安全驗收後，才填入部署網址並開啟。
-const TEST_WEB_APP_URL = '';
+const TEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 if(/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL)){
   form.action=TEST_WEB_APP_URL;
   form.method='POST';
   form.target='_blank';
-  document.getElementById('submitBtn').disabled=false;
-  document.getElementById('submitBtn').textContent='送出匯款回報';
-  document.getElementById('status').textContent='送出後將在新頁面顯示回報結果。';
+  // TEST 階段保持停用，直到部署權限及端到端測試確認。
+  document.getElementById('status').textContent='已設定 TEST 後端網址，等待安全驗收後開放送出。';
 }
 form.addEventListener('submit',event=>{
   if(!form.action.includes('script.google.com/macros/s/')){event.preventDefault();return;}
