@@ -566,3 +566,41 @@ function testPickupRemittanceValidation2027(){
   Logger.log('===== S-11B 自取回報程式安全檢查 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+
+/**
+ * S-11C｜建立專用自取匯款回報測試訂單並回報（僅 TEST）。
+ * 使用正常建單流程；只操作本函式建立的訂單，不碰既有七筆。
+ * 此函式會真的新增一筆 TEST 訂單，並將 N 設為待核帳、O 設為 12345。
+ */
+function testPickupRemittanceWrite2027(){
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    throw Error('非核准 TEST 試算表，拒絕執行 S-11C');
+  const date='2027-08-16',phone='0912345678',code='12345';
+  const reqId='S11C'+Utilities.getUuid().replace(/-/g,'');
+  const before=sjUsage_(date).total;
+  if(before+48>SJ27.LIMIT)throw Error('測試日期產能不足，未建立訂單');
+  const created=createOrder2027({method:'自取',name:'S11C測試訂單',phone,
+    date,pickupTime:'13:00–15:00',sixBoxes:8,fifteenBoxes:0,
+    notes:'S-11C 專用測試，請勿出貨',requestId:reqId});
+  if(!created.ok||created.method!=='自取')throw Error('建立 TEST 訂單失敗');
+  const first=submitPickupRemittance2027({orderId:created.orderId,phone,last5:code});
+  const second=submitPickupRemittance2027({orderId:created.orderId,phone,last5:code});
+  const sh=sjSheet_(SJ27.PICKUP),rows=sh.getRange(2,1,sh.getLastRow()-1,18).getValues();
+  const matches=rows.filter(v=>String(v[0]||'')===created.orderId);
+  if(matches.length!==1)throw Error('TEST 訂單查找異常');
+  const v=matches[0];
+  const checks={created:created.ok,pendingReview:String(v[13])==='待核帳',
+    remittanceCode:String(v[14])===code,verifiedDateBlank:!v[15],
+    orderStatusUnchanged:String(v[16])==='待確認',
+    repeatIdempotent:second.ok===true&&second.alreadySubmitted===true,
+    overdueProtected:sjOverdueSafeDecision2027_(v,
+      {pay:14,status:17,deadline:13,remit:15,pieces:9},Date.now()+100*3600000).kind==='protected',
+    capacityUnchanged:sjUsage_(date).total===before+48};
+  const result={mode:'WRITE TEST S-11C',orderId:created.orderId,date,
+    checks,passed:Object.values(checks).every(Boolean),
+    addedTestOrder:true,writePerformed:true,
+    note:'已新增一筆 TEST 自取訂單，保留供後續核帳測試；不會自動刪除'};
+  Logger.log('===== S-11C 自取匯款回報實際寫入測試 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
