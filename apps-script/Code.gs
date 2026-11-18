@@ -439,3 +439,75 @@ function testOverdueRulesSimulation2027(){
   Logger.log('===== S-05B 逾期規則純模擬｜NO SHEET ACCESS =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/**
+ * S-05C｜建立專用逾期測試訂單（需人工執行；會寫入 TEST）。
+ * 以唯一 RID 標記，只會建立一次；將付款截止時間設為昨天，模擬逾期。
+ * 不影響原有兩筆已付款訂單；尚未執行取消。
+ */
+function setupOverdueTestOrder2027(){
+  const rid='TEST-S05C-OVERDUE-2027-0001';
+  const existing=sjDuplicate_(rid);
+  if(existing){
+    Logger.log(JSON.stringify({mode:'SETUP',existing:true,orderId:existing.orderId,message:'測試訂單已存在，不重複建立或修改'}));
+    return existing;
+  }
+  const created=createOrder2027({
+    method:'自取',name:'S05C逾期測試',phone:'0912345678',
+    date:'2027-09-03',pickupTime:'13:00–15:00',
+    sixBoxes:8,fifteenBoxes:0,notes:'S05C 專用逾期取消測試',
+    requestId:rid
+  });
+  const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+  const ids=sh.getRange(2,1,last-1,1).getDisplayValues();
+  const idx=ids.findIndex(v=>v[0]===created.orderId);
+  if(idx<0)throw Error('找不到剛建立的測試訂單，請勿繼續');
+  const row=idx+2;
+  // 測試專用：將截止時間調整到 24 小時前；正式訂單仍維持建立後 72 小時。
+  sh.getRange(row,13).setValue(new Date(Date.now()-24*3600000)).setNumberFormat('yyyy/mm/dd hh:mm');
+  const result={mode:'SETUP WRITE TEST ONLY',orderId:created.orderId,row,
+    sheet:SJ27.PICKUP,pieces:48,deadline:'昨天（僅此測試單）'};
+  Logger.log('===== S-05C 建立專用逾期測試單 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+
+/**
+ * S-05C｜只取消專用 RID 的測試訂單。
+ * 重新確認 ID、RID、未付款、有效截止日期、已逾期及狀態；
+ * 取消後重新彙整每日產能，不刪除訂單或更動其他訂單。
+ * 不建立定時觸發器，絕不批次取消一般訂單。
+ */
+function applyOverdueTestCancellation2027(){
+  const rid='[RID:TEST-S05C-OVERDUE-2027-0001]';
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('系統忙碌，未取消');
+  try{
+    const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+    if(last<2)throw Error('沒有測試訂單');
+    const rows=sh.getRange(2,1,last-1,18).getValues();
+    const matches=rows.map((v,i)=>({v,row:i+2})).filter(x=>String(x.v[17]||'').includes(rid));
+    if(matches.length!==1)throw Error('S05C 專用測試單數量不為 1，已停止');
+    const {v,row}=matches[0],orderId=String(v[0]||'').trim();
+    const payment=String(v[13]||'').trim(),status=String(v[16]||'').trim();
+    const deadline=v[12],pieces=Number(v[8]);
+    if(payment!=='未付款'||!sjStatusActive_(status)||
+       !(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
+       deadline.getTime()>=Date.now()||pieces!==48)
+      throw Error('付款、狀態、期限或數量不符合測試條件；未取消');
+    const date=sjDateValue_(v[2]),before=sjUsage_(date);
+    sh.getRange(row,14).setValue('逾期未付');
+    sh.getRange(row,17).setValue('已取消');
+    SpreadsheetApp.flush();
+    const summaryRows=refreshCapacitySummary2027_();
+    const after=sjUsage_(date);
+    const result={mode:'WRITE TEST ONLY',sheet:SJ27.PICKUP,row,orderId,
+      payment:'逾期未付',status:'已取消',date,
+      capacityBefore:before.total,capacityAfter:after.total,
+      released:before.total-after.total,expectedReleased:pieces,
+      capacityMatches:before.total-after.total===pieces,summaryRows};
+    Logger.log('===== S-05C 專用測試單取消與產能釋放 =====');
+    Logger.log(JSON.stringify(result));
+    if(!result.capacityMatches)throw Error('取消後產能差額不符，請檢查日產能統計');
+    return result;
+  }finally{lock.releaseLock();}
+}
