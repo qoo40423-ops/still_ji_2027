@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>自取匯款回報｜紀家烘焙坊 116 年中秋</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--wine:#803d50;--ink:#49352b;--muted:#806d60;--line:#e8dbcf;--bg:#faf6f0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC",serif;min-height:100vh;display:flex;flex-direction:column}
+header{background:#fffdf9;border-bottom:1px solid var(--line)}nav{max-width:1100px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{color:var(--wine);font-weight:700;text-decoration:none}.links{display:flex;gap:15px;flex-wrap:wrap;font-size:14px}.links a{color:var(--ink);text-decoration:none}
+main{width:min(620px,100%);margin:0 auto;padding:52px 18px 70px;flex:1}.eyebrow{letter-spacing:.18em;color:#a88965;font-size:12px;text-align:center}h1{color:var(--wine);text-align:center;font-size:clamp(27px,5vw,36px);font-weight:600;margin:14px 0}p{line-height:1.9}.intro{text-align:center;color:var(--muted);font-size:14px}
+.panel{margin-top:30px;padding:clamp(22px,5vw,36px);background:#fffdfa;border:1px solid var(--line);border-radius:16px;box-shadow:0 7px 28px #49352b08}
+label{display:block;font-size:14px;font-weight:600;margin:0 0 8px}.field{margin-bottom:23px}
+input{width:100%;font:inherit;font-size:16px;padding:13px 14px;border:1px solid #d5c8bd;border-radius:9px;background:#fff;outline:none}
+input:focus{border-color:var(--wine);box-shadow:0 0 0 3px #803d501a}.hint{font-size:12px;color:var(--muted);margin-top:7px}
+.note{background:#f8f0ea;padding:15px;border-radius:10px;font-size:13px;line-height:1.9;color:#695348}
+button{width:100%;border:0;border-radius:9px;padding:15px;font:inherit;font-weight:700;background:var(--wine);color:white;margin-top:20px;cursor:pointer}button:disabled{background:#b7aaa7;cursor:not-allowed}
+#status{margin-top:15px;color:var(--wine);font-size:13px;line-height:1.8}
+footer{text-align:center;padding:24px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media(max-width:600px){main{padding-top:35px}.links{gap:10px}}
+</style></head><body>
+<header><nav><a class="brand" href="index.html">紀家烘焙坊 · STILL JI</a><div class="links"><a href="index.html">首頁</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html" aria-current="page">自取匯款回報</a></div></nav></header>
+<main><div class="eyebrow">STILL JI · MID-AUTUMN 2027</div><h1>自取匯款回報</h1><p class="intro">完成匯款後，請填寫訂單資料與帳號後五碼。<br>本專區僅供「門市自取」訂單使用。</p>
+<section class="panel"><form id="remittanceForm" autocomplete="on">
+<div class="field"><label for="orderId">訂單編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="SJ27-XXXXXX-XXXXXXXX" autocomplete="off"><div class="hint">請輸入訂單成立時取得的編號。</div></div>
+<div class="field"><label for="phone">訂購聯絡電話</label><input id="phone" name="phone" type="tel" maxlength="30" required placeholder="請輸入訂購時填寫的電話" autocomplete="tel"></div>
+<div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
+<div class="note">回報後將由店家人工核對款項；送出不代表已付款成功。<br>門市現金付款不適用本表單，宅配訂單請依原流程確認宅配單。</div>
+<button id="submitBtn" type="submit" disabled>匯款回報（測試版尚未開放送出）</button><div id="status" role="status" aria-live="polite">目前為 TEST 介面展示，尚未連接公開回報服務，資料不會送出。</div>
+</form></section></main>
+<footer>紀家烘焙坊 · STILL JI｜116 年中秋訂購測試版</footer>
+<script>
+const form=document.getElementById('remittanceForm');
+const last5=document.getElementById('last5');
+last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').slice(0,5)});
+form.addEventListener('submit',event=>event.preventDefault());
+</script></body></html>
