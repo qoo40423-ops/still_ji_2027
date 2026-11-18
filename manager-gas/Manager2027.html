@@ -31,8 +31,8 @@ function renderCalendar(){
  const d=data.capacity.find(x=>x.date===selectedDay);
  if(!d){$('results').innerHTML='<div class="detail"><strong>'+esc(selectedDay)+'（'+weekday(selectedDay)+'）</strong><p class="muted">當日沒有有效訂單產能。</p></div>';return}
  const row=(title,x)=>'<div><strong>'+title+'：</strong>'+fmt(x)+'</div>';
- $('results').innerHTML='<div class="detail"><div class="total">'+esc(d.date.slice(5).replace('-','/'))+'（'+weekday(d.date)+'）合計 '+d.pans+' 盤</div><div class="muted">共 '+d.total+' 顆／上限 '+d.limit+' 顆，剩餘 '+d.remaining+' 顆</div><hr>'+row('上午（含宅配）',d.morning)+row('下午',d.afternoon)+'</div>'+
- '<div class="detail"><h3>門市自取合計</h3>'+fmt(d.pickup)+'<hr>'+row('09:00~12:00',d.slots['09:00~12:00'])+row('13:00~15:00',d.slots['13:00~15:00'])+row('17:00~18:00',d.slots['17:00~18:00'])+(d.unclassified.pieces?'<p class="muted">未對應指定時段：'+fmt(d.unclassified)+'（請確認試算表 D 欄）</p>':'')+'</div>'+
+ $('results').innerHTML='<div class="detail"><div class="total">'+esc(d.date.slice(5).replace('-','/'))+'（'+weekday(d.date)+'）合計 '+d.pans+' 盤</div><div class="muted">共 '+d.total+' 顆／上限 '+d.limit+' 顆，剩餘 '+d.remaining+' 顆</div><hr>'+row('上午製作（含宅配）',d.morning)+row('下午製作',d.afternoon)+'</div>'+
+ '<div class="detail"><h3>門市自取合計</h3>'+fmt(d.pickup)+'<hr>'+row('09:00~10:00（9/15 特別時段）',d.slots['09:00~10:00'])+row('09:00~12:00（週末）',d.slots['09:00~12:00'])+row('13:00~15:00',d.slots['13:00~15:00'])+row('15:00~17:00',d.slots['15:00~17:00'])+row('17:00~18:00',d.slots['17:00~18:00'])+(d.unclassified.pieces?'<p class="muted">未對應指定時段：'+fmt(d.unclassified)+'（請確認試算表 D 欄）</p>':'')+'</div>'+
  '<div class="detail"><h3>宅配合計（全部計入上午）</h3>'+fmt(d.delivery)+'</div>';
 }
 
