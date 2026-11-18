@@ -625,6 +625,9 @@ function doPost(e){
     message+'</p><p>您可以關閉此頁，返回紀家烘焙坊網站。</p></main></body></html>');
   if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
     return respond('目前無法受理，請聯繫店家。',false);
+  // 預設關閉；只有完成公開驗收後才可在 Script Properties 明確設為 ENABLED。
+  if(PropertiesService.getScriptProperties().getProperty('SJ27_PUBLIC_REMITTANCE')!=='ENABLED')
+    return respond('匯款回報服務尚未開放，請稍後再試。',false);
   if(String(p.action||'')!=='pickup-remittance'||String(p.website||'')!=='stillji2027')
     return respond('請由紀家烘焙坊自取匯款回報頁面送出。',false);
   if(String(p.company||'').trim())return respond('無法完成回報，請稍後再試。',false);
@@ -653,5 +656,23 @@ function inspectPickupWebEndpoint2027(){
     remittanceCore:typeof submitPickupRemittance2027==='function'};
   const result={mode:'READ ONLY S-11D',checks,passed:Object.values(checks).every(Boolean),
     writePerformed:false,note:'此檢查不代表 Web App 已部署或公開安全審查完成'};
+  Logger.log(JSON.stringify(result));return result;
+}
+
+/** S-11F｜唯讀確認公開入口開關，絕不修改設定或訂單。 */
+function inspectPublicRemittanceGate2027(){
+  const value=PropertiesService.getScriptProperties().getProperty('SJ27_PUBLIC_REMITTANCE');
+  const source=String(doPost);
+  const checks={
+    testSpreadsheet:SJ27.SPREADSHEET_ID==='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4',
+    failClosed:source.includes("getProperty('SJ27_PUBLIC_REMITTANCE')!=='ENABLED'"),
+    currentlyDisabled:value!=='ENABLED',
+    noGetEndpoint:typeof doGet==='undefined'
+  };
+  const result={mode:'READ ONLY S-11F',checks,passed:Object.values(checks).every(Boolean),
+    publicGate:value==='ENABLED'?'ENABLED':'DISABLED',
+    writePerformed:false,
+    reminder:'必須更新既有 Web App 部署版本，舊部署不會自動套用此開關'};
+  Logger.log('===== S-11F 公開入口預設關閉檢查 =====');
   Logger.log(JSON.stringify(result));return result;
 }
