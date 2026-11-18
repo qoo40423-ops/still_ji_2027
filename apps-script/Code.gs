@@ -951,3 +951,43 @@ function setupOverdueProtectionFixtures2027(){
   Logger.log('===== S-08C 建立安全保護測試單 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/** S-09A｜建立唯一的真實逾期候選 TEST 單；重跑只回報、不重設。 */
+function setupOverdue72hCandidate2027(){
+  const rid='TEST-S09A-72H-CANCEL-2027-0001';
+  let found=sjDuplicate_(rid),isNew=false;
+  if(!found){
+    found=createOrder2027({method:'自取',name:'S09A逾期取消測試',
+      phone:'0912345678',date:'2027-09-13',pickupTime:'13:00–15:00',
+      sixBoxes:8,fifteenBoxes:0,notes:'S09A 專用取消驗收測試單',
+      requestId:rid});
+    isNew=true;
+  }
+  const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+  const rows=sh.getRange(2,1,last-1,18).getValues();
+  const hits=rows.map((v,i)=>({v,row:i+2})).filter(x=>
+    String(x.v[0]||'')===found.orderId&&
+    String(x.v[17]||'').includes('[RID:'+rid+']'));
+  if(hits.length!==1)throw Error('S09A 測試單識別不唯一，停止');
+  const h=hits[0];
+  if(isNew){
+    if(String(h.v[13])!=='未付款'||String(h.v[16])!=='待確認'||String(h.v[14]||'').trim())
+      throw Error('S09A 測試單初始狀態異常，停止');
+    const created=new Date(Date.now()-96*3600000);
+    const deadline=new Date(created.getTime()+72*3600000);
+    sh.getRange(h.row,2).setValue(created).setNumberFormat('yyyy/mm/dd hh:mm');
+    sh.getRange(h.row,13).setValue(deadline).setNumberFormat('yyyy/mm/dd hh:mm');
+    SpreadsheetApp.flush();
+  }
+  const current=sh.getRange(h.row,1,1,18).getValues()[0];
+  const decision=sjOverdueSafeDecision2027_(current,
+    {pay:14,status:17,deadline:13,remit:15,pieces:9},Date.now());
+  const result={mode:'S09A SETUP TEST ONLY',orderId:found.orderId,
+    sheet:SJ27.PICKUP,row:h.row,createdNew:isNew,
+    date:sjDateValue_(current[2]),pieces:current[8],
+    payment:current[13],status:current[16],hasRemittance:!!String(current[14]||'').trim(),
+    decision:decision.kind,reason:decision.reason||null,
+    note:'尚未取消；下一步請執行 previewOverdueSafety2027（READ ONLY）'};
+  Logger.log('===== S-09A 建立滿72小時逾期候選 TEST 單 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
