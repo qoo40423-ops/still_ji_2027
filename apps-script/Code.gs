@@ -490,7 +490,7 @@ function applyOverdueTestCancellation2027(){
     const {v,row}=matches[0],orderId=String(v[0]||'').trim();
     const payment=String(v[13]||'').trim(),status=String(v[16]||'').trim();
     const deadline=v[12],pieces=Number(v[8]);
-    if(payment!=='未付款'||!sjStatusActive_(status)||
+    if(!['未付款','逾期未付'].includes(payment)||!['待確認','待付款'].includes(status)||
        !(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
        deadline.getTime()>=Date.now()||pieces!==48)
       throw Error('付款、狀態、期限或數量不符合測試條件；未取消');
