@@ -760,7 +760,7 @@ function sj27PublicCreate_(p,respond){
  const lock=LockService.getScriptLock();
  if(!lock.tryLock(20000))return respond('目前訂單較多，請稍後重試。',false);
  try{
-  if(!/^[A-Za-z0-9_-]{16,100}$/.test(rid)||!/^2027-(08|09)-\d{2}$/.test(date)||date>'2027-09-15'||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||!name||!/^09\d{8}$/.test(phone.replace(/[\s-]/g,'')))throw Error('姓名、電話、日期或識別碼不正確');
+  if(!/^[A-Za-z0-9_-]{16,100}$/.test(rid)||!/^2027-(08|09)-\d{2}$/.test(date)||date>'2027-09-15'||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||!name||!/^(09\d{8}|0[2-8]\d{7,8}(?:#\d{1,6})?)$/.test(phone.replace(/[\s()－-]/g,'')))throw Error('姓名、電話、日期或識別碼不正確');
   if(!['pickup','delivery'].includes(kind))throw Error('訂單類型不正確');
   const ss=SpreadsheetApp.openById(SJ27.SPREADSHEET_ID),sh=ss.getSheetByName(kind==='pickup'?'門市自取':'宅配到府'),width=kind==='pickup'?18:25;
   if(!sh)throw Error('訂單工作表不存在');
