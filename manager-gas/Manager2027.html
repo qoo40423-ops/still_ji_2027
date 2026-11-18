@@ -29,7 +29,7 @@ function renderNew(){
  $('results').innerHTML='<div class="entry"><h2>新增一般訂單｜TEST</h2><label>訂單類型</label><select id="newKind" onchange="draftKind=this.value;renderNew()"><option value="自取" '+(draftKind==='自取'?'selected':'')+'>門市自取</option><option value="宅配" '+(draftKind==='宅配'?'selected':'')+'>宅配到府</option></select>'+
  field('newName','姓名')+field('newPhone','電話','tel')+(draftKind==='自取'?'<label for="newDate">取貨日期</label><input id="newDate" type="date" onchange="updateNewPickupSlots()">':field('newDate','出貨日期','date'))+
  (draftKind==='自取'?'<label for="newSlot">取貨時段</label><select id="newSlot" disabled><option value="">請先選擇取貨日期</option></select><div class="twocol">'+num('newSix','6入盒數')+num('newFifteen','15入盒數')+'</div>':
- field('newAddress','收件地址')+'<div class="twocol">'+num('newFour','6入4盒組')+num('newTen','6入10盒組')+num('newGroup','6入15盒組')+num('newFifteen','15入盒數')+num('newBags','提袋數')+'</div>')+
+ field('newAddress','收件地址')+'<label for="newInvoiceType">發票類型</label><select id="newInvoiceType" onchange="toggleNewTaxId()"><option value="一般發票">一般發票（不需統編）</option><option value="公司發票">公司發票（需統編）</option></select><div id="newTaxIdWrap" class="hide"><label for="newTaxId">統一編號（8 碼）</label><input id="newTaxId" type="text" inputmode="numeric" maxlength="8" placeholder="請輸入 8 碼統一編號"></div><div class="twocol">'+num('newFour','6入4盒組')+num('newTen','6入10盒組')+num('newGroup','6入15盒組')+num('newFifteen','15入盒數')+num('newBags','提袋數')+'</div>')+
  '<label>付款方式</label><select id="newPayment" onchange="document.getElementById(\'newPayMethodWrap\').classList.toggle(\'hide\',this.value!==\'已收款\')"><option value="待付款">待付款（72小時）</option><option value="已收款">現場已收款</option></select><div id="newPayMethodWrap" class="hide"><label>現場收款方式</label><select id="newPayMethod"><option value="現金">現金</option><option value="轉帳">轉帳</option></select></div>'+
  field('newNotes','備註')+'<button id="newSubmit" class="action" onclick="submitNew()">確認建立訂單</button><p class="muted" id="newMsg">送出前請核對日期、數量及收款狀態；金額由後端計算。</p></div>';
 }
@@ -44,11 +44,13 @@ function updateNewPickupSlots(){
  select.innerHTML='<option value="">'+(options.length?'請選擇取貨時段':'請先選擇取貨日期')+'</option>'+options.map(v=>'<option value="'+v+'">'+v+'</option>').join('');
  if(options.includes(previous))select.value=previous;
 }
+function toggleNewTaxId(){const wrap=$('newTaxIdWrap');if(!wrap)return;const company=val('newInvoiceType')==='公司發票';wrap.classList.toggle('hide',!company);if(!company)$('newTaxId').value='';}
 function submitNew(){
  if(newBusy)return;
  const kind=val('newKind'),paid=val('newPayment')==='已收款';
- const payload={method:kind,name:val('newName'),phone:val('newPhone'),date:val('newDate'),slot:val('newSlot'),six:val('newSix')||0,fifteen:val('newFifteen')||0,address:val('newAddress'),four:val('newFour')||0,ten:val('newTen')||0,group:val('newGroup')||0,bags:val('newBags')||0,payment:val('newPayment'),payMethod:paid?val('newPayMethod'):'',notes:val('newNotes'),requestId:newRequest||requestToken()};
+ const payload={method:kind,name:val('newName'),phone:val('newPhone'),date:val('newDate'),slot:val('newSlot'),six:val('newSix')||0,fifteen:val('newFifteen')||0,address:val('newAddress'),invoiceType:val('newInvoiceType')||'一般發票',taxId:val('newTaxId'),four:val('newFour')||0,ten:val('newTen')||0,group:val('newGroup')||0,bags:val('newBags')||0,payment:val('newPayment'),payMethod:paid?val('newPayMethod'):'',notes:val('newNotes'),requestId:newRequest||requestToken()};
  if(!payload.name||!payload.phone||!payload.date||(kind==='自取'&&!payload.slot)){$('newMsg').textContent='請填寫姓名、電話、日期與取貨時段';return}
+ if(kind==='宅配'&&payload.invoiceType==='公司發票'&&!/^\d{8}$/.test(payload.taxId)){$('newMsg').textContent='公司發票請填寫 8 碼統一編號';return}
  if(!confirm('確認建立'+kind+'訂單？付款狀態：'+(paid?'現場已收款（'+payload.payMethod+'）':'待付款')+'。'))return;
  newRequest=payload.requestId;newBusy=true;$('newSubmit').disabled=true;$('newMsg').textContent='正在建立訂單…';
  google.script.run.withSuccessHandler(res=>{newBusy=false;newRequest='';renderNew();$('newMsg').textContent='上一筆建立成功：'+res.orderId+'｜金額 NT$'+res.amount+(res.duplicate?'（重複送單，未再次建立）':'')+'。可繼續填寫下一筆訂單。';}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
