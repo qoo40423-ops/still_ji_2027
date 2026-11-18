@@ -726,59 +726,66 @@ function applyBatchOverdueTest2027(){
  * 5. 完成後從有效訂單重算產能；不刪除歷史資料。
  * 注意：試算表寫入不是交易；若中途失敗，重新執行前須人工檢查。
  */
+function sjOverdueSafeDecision2027_(v,t,now){
+  const id=String(v[0]||'').trim();
+  const payment=String(v[t.pay-1]||'').trim();
+  const status=String(v[t.status-1]||'').trim();
+  if(!id)return {kind:'ignore'};
+  if(!['未付款','逾期未付'].includes(payment)||status!=='待確認')
+    return {kind:'protected',reason:'付款或訂單狀態不符'};
+  const remittance=String(v[t.remit-1]||'').trim();
+  if(remittance)return {kind:'protected',reason:'已有匯款資料，等待人工確認'};
+  const created=v[1],deadline=v[t.deadline-1];
+  const date=sjDateValue_(v[2]),pieces=Number(v[t.pieces-1]);
+  if(!(created instanceof Date)||!Number.isFinite(created.getTime())||
+     !(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
+     !/^2027-(08|09)-\\d{2}$/.test(date)||
+     !Number.isSafeInteger(pieces)||pieces<=0||
+     deadline.getTime()<created.getTime())
+    return {kind:'warning',reason:'成立時間、截止時間、製作日期或顆數異常'};
+  if(now<created.getTime()+SJ27.PAY_HOURS*3600000)
+    return {kind:'protected',reason:'成立未滿72小時'};
+  if(now<deadline.getTime())
+    return {kind:'protected',reason:'付款期限尚未到'};
+  return {kind:'candidate',date,pieces};
+}
 function applyOverdueAll2027(){
   const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('S-07 系統忙碌，未執行');
+  if(!lock.tryLock(30000))throw Error('S-08 系統忙碌，未執行');
   try{
     const now=Date.now(),specs=[
-      {name:SJ27.PICKUP,pay:14,status:17,deadline:13,pieces:9,width:18},
-      {name:SJ27.DELIVERY,pay:19,status:24,deadline:18,pieces:12,width:25}
+      {name:SJ27.PICKUP,pay:14,status:17,deadline:13,remit:15,pieces:9,width:18},
+      {name:SJ27.DELIVERY,pay:19,status:24,deadline:18,remit:20,pieces:12,width:25}
     ];
-    const pending=[],warnings=[],protectedOrders=[];
+    const pending=[],warnings=[],protectedOrders=[],allIds=[];
     for(const t of specs){
       const sh=sjSheet_(t.name),last=sh.getLastRow();
       if(last<2)continue;
       const rows=sh.getRange(2,1,last-1,t.width).getValues();
-      for(let i=0;i<rows.length;i++){
-        const v=rows[i],id=String(v[0]||'').trim();
-        if(!id)continue;
-        const payment=String(v[t.pay-1]||'').trim();
-        const status=String(v[t.status-1]||'').trim();
-        if(!['未付款','逾期未付'].includes(payment)||
-           status!=='待確認'){
-          protectedOrders.push({sheet:t.name,id});continue;
-        }
-        const deadline=v[t.deadline-1],date=sjDateValue_(v[2]);
-        const pieces=Number(v[t.pieces-1]);
-        if(!(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
-           !/^2027-(08|09)-\d{2}$/.test(date)||
-           !Number.isSafeInteger(pieces)||pieces<=0){
-          warnings.push({sheet:t.name,row:i+2,id,reason:'截止日期、製作日期或顆數異常'});
-          continue;
-        }
-        if(deadline.getTime()>=now)continue;
-        pending.push({sh,t,row:i+2,id,date,pieces});
-      }
+      rows.forEach((v,i)=>{
+        const id=String(v[0]||'').trim();
+        if(!id)return;
+        allIds.push(id);
+        const d=sjOverdueSafeDecision2027_(v,t,now);
+        if(d.kind==='warning')warnings.push({sheet:t.name,row:i+2,id,reason:d.reason});
+        else if(d.kind==='protected')protectedOrders.push({sheet:t.name,id,reason:d.reason});
+        else if(d.kind==='candidate')pending.push({sh,t,row:i+2,id,date:d.date,pieces:d.pieces});
+      });
     }
-    // 有任何不明資料時整批停止，避免部分取消。
+    if(new Set(allIds).size!==allIds.length)
+      warnings.push({reason:'跨表或同表訂單編號重複'});
     if(warnings.length){
       const result={mode:'ABORT NO WRITE',warnings,candidateCount:pending.length};
-      Logger.log('===== S-07 安全中止 =====');
+      Logger.log('===== S-08 安全中止 =====');
       Logger.log(JSON.stringify(result));return result;
     }
-    // 再確認唯一訂單 ID，避免誤改。
-    const ids=pending.map(x=>x.id);
-    if(new Set(ids).size!==ids.length)throw Error('候選訂單 ID 重複，已停止');
     const before={};
     pending.forEach(x=>{if(!(x.date in before))before[x.date]=sjUsage_(x.date).total;});
     for(const x of pending){
       x.sh.getRange(x.row,x.t.pay).setValue('逾期未付');
       x.sh.getRange(x.row,x.t.status).setValue('已取消');
     }
-    if(pending.length){
-      SpreadsheetApp.flush();
-      refreshCapacitySummary2027_();
-    }
+    if(pending.length){SpreadsheetApp.flush();refreshCapacitySummary2027_();}
     const releaseByDate={},capacityChecks={};
     for(const date of Object.keys(before)){
       const after=sjUsage_(date).total;
@@ -787,16 +794,48 @@ function applyOverdueAll2027(){
       capacityChecks[date]={before:before[date],after,released:releaseByDate[date],
         expected,pass:releaseByDate[date]===expected};
     }
-    const result={mode:'MANUAL WRITE',cancelledCount:pending.length,
+    const result={mode:'MANUAL WRITE S-08',cancelledCount:pending.length,
       cancelled:pending.map(x=>({sheet:x.t.name,row:x.row,id:x.id,pieces:x.pieces})),
       protectedCount:protectedOrders.length,releaseByDate,capacityChecks,
       passed:Object.values(capacityChecks).every(x=>x.pass),
-      note:'S-07 未安裝定時觸發器；僅手動執行'};
-    Logger.log('===== S-07 通用逾期取消（手動） =====');
+      note:'尚未安裝定時觸發器；須先完成 S-08 測試'};
+    Logger.log('===== S-08 通用逾期取消（手動） =====');
     Logger.log(JSON.stringify(result));
-    if(!result.passed)throw Error('S-07 產能驗證不符，請人工檢查');
+    if(!result.passed)throw Error('S-08 產能驗證不符，請人工檢查');
     return result;
   }finally{lock.releaseLock();}
+}
+/** S-08A｜純記憶體安全規則測試：不讀寫試算表。 */
+function testOverdueSafetyRules2027(){
+  const now=new Date('2026-11-18T11:00:00+08:00').getTime();
+  const t={pay:14,status:17,deadline:13,remit:15,pieces:9};
+  function row(ageHours,deadlineHoursAgo,payment,status,remit){
+    const v=Array(18).fill('');
+    v[0]='TEST-S08';v[1]=new Date(now-ageHours*3600000);
+    v[2]='2027-09-08';v[8]=48;
+    v[12]=new Date(now-deadlineHoursAgo*3600000);
+    v[13]=payment;v[14]=remit;v[16]=status;return v;
+  }
+  const cases=[
+    {name:'未滿72小時但期限被提前',v:row(1,24,'未付款','待確認',''),want:'protected'},
+    {name:'滿72小時且期限已過',v:row(96,24,'未付款','待確認',''),want:'candidate'},
+    {name:'已填匯款後五碼',v:row(96,24,'未付款','待確認','12345'),want:'protected'},
+    {name:'待核帳保護',v:row(96,24,'待核帳','待確認',''),want:'protected'},
+    {name:'已付款保護',v:row(96,24,'已付款','已確認',''),want:'protected'},
+    {name:'期限延長尚未到',v:row(96,-24,'未付款','待確認',''),want:'protected'},
+    {name:'已取消不重複',v:row(96,24,'逾期未付','已取消',''),want:'protected'},
+    {name:'成立時間缺失中止',v:row(96,24,'未付款','待確認',''),want:'warning'}
+  ];
+  cases[7].v[1]='';
+  const results=cases.map(x=>{
+    const got=sjOverdueSafeDecision2027_(x.v,t,now).kind;
+    return {name:x.name,want:x.want,got,pass:got===x.want};
+  });
+  const result={mode:'PURE SIMULATION NO SHEET ACCESS',
+    passed:results.every(x=>x.pass),passedCount:results.filter(x=>x.pass).length,
+    total:results.length,results};
+  Logger.log('===== S-08A 72小時與匯款保護測試 =====');
+  Logger.log(JSON.stringify(result));return result;
 }
 
 /**
