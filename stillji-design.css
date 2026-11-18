@@ -1,0 +1,44 @@
+/* STILL JI | 2027 Mid-Autumn visual system v1
+   A quiet Japanese confectionery-inspired design. Presentation only. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
+:root{
+ --wine:#78434b;--ink:#463b35;--muted:#796b61;--line:#e5d9cc;
+ --bg:#f7f4ee;--cream:#f7f4ee;--cocoa:#463b35;--soft:#796b61;
+ --gold:#a48b6c;--sj-font:'Noto Serif TC','Songti TC','PMingLiU',serif;
+}
+html{scroll-behavior:smooth}
+body{background:#f7f4ee!important;color:#463b35!important;font-family:var(--sj-font)!important;line-height:1.85;-webkit-font-smoothing:antialiased}
+body,body button,body input,body select,body textarea,body a,body label,body summary,body option{font-family:var(--sj-font)!important}
+body button,body input,body select,body textarea{font-size:15px}
+body h1,body h2,body h3,body h4{font-family:var(--sj-font)!important;color:#78434b;line-height:1.45;letter-spacing:.035em}
+body h1{font-weight:700;letter-spacing:.065em}
+body p{line-height:1.95}
+body .eyebrow,body .kicker{letter-spacing:.17em;color:#a48b6c}
+body>header{background:#fffdf9!important;border-bottom:1px solid #e9e0d7!important;box-shadow:none!important;padding:0!important}
+body>header nav.sj-global-nav{max-width:1120px!important;width:100%!important;margin:0 auto!important;padding:15px 24px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:20px!important;flex-wrap:wrap!important}
+body>header .sj-global-nav .brand{display:inline-flex!important;align-items:center!important;gap:12px!important;color:#78434b!important;font-size:16px!important;font-weight:700!important;text-decoration:none!important;white-space:nowrap!important;letter-spacing:.015em!important}
+body>header .sj-global-nav .brand img{width:38px!important;height:38px!important;object-fit:contain!important}
+body>header .sj-global-nav .links{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:clamp(10px,1.8vw,24px)!important;flex-wrap:wrap!important;margin-left:auto!important}
+body>header .sj-global-nav .links a{color:#57463e!important;text-decoration:none!important;font-size:13px!important;font-weight:500!important;letter-spacing:.035em!important;white-space:nowrap!important;transition:color .2s}
+body>header .sj-global-nav .links a:hover,body>header .sj-global-nav .links a[aria-current=page]{color:#8f4553!important}
+body main{max-width:1120px}
+body .panel,body .card,body .notice,body .flow-alert,body .section-card{border-color:#e6d8c9}
+body .panel{background:#fffdfa!important;border:1px solid #e6d8c9!important;border-radius:20px!important;box-shadow:0 12px 34px rgba(71,52,42,.035)!important}
+body .choices .choice{background:#f3eae1!important;border:1px solid #dec9b7!important;border-radius:14px!important;box-shadow:none!important}
+body .choices .choice:hover{background:#eadbd0!important;border-color:#b48d83!important}
+body .btn,body button[type=submit],body .submit-btn{border-radius:999px;transition:background .2s,border-color .2s,transform .2s}
+body .btn:hover,body button[type=submit]:hover{transform:translateY(-1px)}
+body input:not([type=checkbox]):not([type=radio]),body select,body textarea{background:#fffefa;border-color:#dfd1c5;border-radius:11px;color:#463b35}
+body input:focus-visible,body select:focus-visible,body textarea:focus-visible,body button:focus-visible,body a:focus-visible{outline:2px solid #a77c83;outline-offset:3px}
+body footer{background:#f4eee7!important;border-top:1px solid #e5d9cc!important;color:#6d5a50!important}
+body footer .social-icons .social-icon-link{background:#fffdfa!important;color:#78434b!important;border-color:#dfcdbf!important}
+body footer .social-icons .social-icon-link:hover{background:#eee1d5!important}
+body .payment-reminder{color:#78434b!important}
+@media(max-width:760px){
+ body>header nav.sj-global-nav{padding:13px 18px!important;gap:10px!important}
+ body>header .sj-global-nav .links{width:100%!important;margin-left:0!important;justify-content:flex-start!important;gap:10px 17px!important}
+ body>header .sj-global-nav .links a{font-size:12px!important}
+ body .panel{border-radius:15px!important}
+ body h1{letter-spacing:.035em}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
