@@ -40,7 +40,95 @@ function submitNew(){
  if(!payload.name||!payload.phone||!payload.date){$('newMsg').textContent='請填寫姓名、電話與日期';return}
  if(!confirm('確認建立'+kind+'訂單？付款狀態：'+(paid?'現場已收款（'+payload.payMethod+'）':'待付款')+'。'))return;
  newRequest=payload.requestId;newBusy=true;$('newSubmit').disabled=true;$('newMsg').textContent='正在建立訂單…';
- google.script.run.withSuccessHandler(res=>{newBusy=false;$('newMsg').textContent='建立成功：'+res.orderId+'｜金額 NT$'+res.amount+(res.duplicate?'（重複送單，未再次建立）':'');$('newSubmit').disabled=true;newRequest='';}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
+ google.script.run.withSuccessHandler(res=>{newBusy=false;newRequest='';const entry=$('results').querySelector('.entry');if(entry){entry.insertAdjacentHTML('afterbegin','<div class="card" role="status"><strong>建立成功：'+esc(res.orderId)+'</strong>｜金額 NT(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
+}
+function renderVip(){
+ const list=data.vip||[];
+ $('results').innerHTML='<div class="entry"><h2>老闆 VIP 公關單｜TEST</h2><p class="muted">不限產能，仍計入師傅盤數。僅限授權管理人員操作。</p>'+
+ field('vipName','公關對象／單位')+field('vipDate','製作日期','date')+
+ '<div class="twocol"><div><label>製作時段</label><select id="vipShift"><option>上午</option><option>下午</option></select></div><div><label>交付方式</label><select id="vipMethod"><option>自取</option><option>宅配</option></select></div></div>'+
+ '<div class="twocol">'+num('vipSix','6入盒數')+num('vipFifteen','15入盒數')+'</div>'+field('vipContact','聯絡資訊／宅配地址（選填）')+field('vipNotes','備註（選填）')+
+ '<button id="vipSubmit" class="action" onclick="submitVip()">新增 VIP 公關單</button><p class="muted" id="vipMsg"></p></div>'+
+ '<h2>VIP 公關單紀錄</h2>'+(list.length?list.slice().reverse().map(o=>'<div class="card"><div class="line"><strong>'+esc(o.name)+'</strong><span class="pill">'+esc(o.status)+'</span></div><div>'+esc(o.date)+' · '+esc(o.shift)+' · '+esc(o.method)+'</div><div>6入 '+o.boxes6+' 盒／15入 '+o.boxes15+' 盒</div><div class="muted">'+esc(o.id)+'</div>'+(o.status!=='已取消'&&o.status!=='已完成'?'<button class="collect" onclick="cancelVip('+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">取消這筆 VIP 單</button>':'')+'</div>').join(''):'<p class="muted">尚無 VIP 公關單</p>');
+}
+function submitVip(){
+ if(vipBusy)return;const payload={name:val('vipName'),date:val('vipDate'),shift:val('vipShift'),method:val('vipMethod'),six:val('vipSix')||0,fifteen:val('vipFifteen')||0,contact:val('vipContact'),notes:val('vipNotes'),requestId:vipRequest||requestToken()};
+ if(!payload.name||!payload.date){$('vipMsg').textContent='請填寫對象與製作日期';return}
+ if(!confirm('確認新增 VIP 公關單？'+payload.date+' '+payload.shift+'製作。'))return;
+ vipRequest=payload.requestId;vipBusy=true;$('vipSubmit').disabled=true;$('vipMsg').textContent='正在新增…';
+ google.script.run.withSuccessHandler(r=>{vipBusy=false;vipRequest='';alert('VIP 單已建立：'+r.orderId);load()}).withFailureHandler(e=>{vipBusy=false;$('vipSubmit').disabled=false;$('vipMsg').textContent='新增失敗：'+e.message}).mgrNewVip2027(payload);
+}
+function cancelVip(id){if(!confirm('確定取消 VIP 公關單 '+id+'？'))return;google.script.run.withSuccessHandler(()=>load()).withFailureHandler(e=>alert('取消失敗：'+e.message)).mgrCancelVip2027(id)}
+
+function moveMonth(delta){const [y,m]=viewMonth.split('-').map(Number);const d=new Date(y,m-1+delta,1);viewMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderCalendar()}
+function chooseDay(d){selectedDay=d;renderCalendar()}
+function fmt(x){return '15入 × '+x.boxes15+' 盒；6入 × '+x.boxes6+' 盒；合計 '+x.pans+' 盤'}
+function weekday(date){const [y,m,d]=date.split('-').map(Number);return '日一二三四五六'[new Date(y,m-1,d).getDay()]}
+function chefKey(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function chefChoose(key){chefDay=key;renderChef()}
+function chefMoveMonth(n){const [y,m]=chefMonth.split('-').map(Number);const dt=new Date(y,m-1+n,1);chefMonth=chefKey(dt).slice(0,7);renderChef()}
+function chefCard(key,compact){
+ const x=data.capacity.find(d=>d.date===key),am=x?x.morning.pans:0,pm=x?x.afternoon.pans:0,total=am+pm;
+ const label=key.slice(5).replace('-','/')+'（'+weekday(key)+'）';
+ return '<div class="chefday"><div class="chefhead"><span>'+label+'</span><span class="cheftotal">'+total+' 盤</span></div>'+
+ '<div class="chefgrid"><div class="chefshift"><span>上午</span><strong>'+am+' 盤</strong></div><div class="chefshift"><span>下午</span><strong>'+pm+' 盤</strong></div></div>'+
+ (x&&x.unclassified.pieces?'<div class="chefnotice">有未分類自取時段，請管理人員檢查；盤數尚未包含該部分。</div>':'')+
+ (x&&x.total>4800?'<div class="chefnotice">已超過每日 80 盤產能上限</div>':'')+'</div>';
+}
+function renderChef(){
+ const today=new Date(),todayKey=chefKey(today);
+ if(!chefDay)chefDay=todayKey;
+ if(!chefMonth)chefMonth=chefDay.slice(0,7);
+ const [y,m]=chefMonth.split('-').map(Number),offset=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate();
+ const available=new Set(data.capacity.map(d=>d.date));
+ let cells=['日','一','二','三','四','五','六'].map(w=>'<span class="dow">'+w+'</span>').join('')+'<span class="blank"></span>'.repeat(offset);
+ for(let i=1;i<=count;i++){const key=chefMonth+'-'+String(i).padStart(2,'0');cells+='<button class="'+(available.has(key)?'has ':'')+(chefDay===key?'selected':'')+'" onclick="chefChoose(\''+key+'\')">'+i+'</button>'}
+ let html='<div class="calendar"><div class="calendar-head"><button onclick="chefMoveMonth(-1)">‹</button><strong>'+y+' 年 '+m+' 月</strong><button onclick="chefMoveMonth(1)">›</button></div><div class="calendar-grid">'+cells+'</div></div>';
+ html+='<h3>選取日期｜製作盤數</h3>'+chefCard(chefDay,false);
+ html+='<div class="line" style="align-items:center;margin:18px 0 8px"><h3 style="margin:0">未來七日</h3><button class="reload" onclick="chefDay=chefKey(new Date());chefMonth=chefDay.slice(0,7);renderChef()">回到今天</button></div>';
+ for(let i=0;i<7;i++){const dt=new Date(today.getFullYear(),today.getMonth(),today.getDate()+i);const key=chefKey(dt);html+=chefCard(key,true)}
+ $('results').innerHTML=html;
+}
+
+function pickupSlotRows(d){
+ const special=d.date==='2027-09-15';
+ const weekend=[0,6].includes(new Date(d.date+'T00:00:00Z').getUTCDay());
+ const slots=[
+ ['09:00~10:00','09:00～10:00（中秋特別）',special],
+ ['09:00~12:00','09:00～12:00（週末）',weekend&&!special],
+ ['13:00~15:00','13:00～15:00',!special],
+ ['15:00~17:00','15:00～17:00',!special],
+ ['17:00~18:00','17:00～18:00',!special]
+ ];
+ return slots.filter(([key,label,normal])=>normal||d.slots[key].pieces>0)
+  .map(([key,label])=>rowCompact(label,d.slots[key])).join('');
+}
+function rowCompact(title,x){return '<div class="slotline"><span class="slottime">'+esc(title)+'</span><span>15入×'+x.boxes15+'　6入×'+x.boxes6+'　<strong>'+x.pans+'盤</strong></span></div>'}
+function renderCalendar(){
+ const today=new Date(),dates=data.capacity.map(x=>x.date);
+ if(!viewMonth){const first=dates.find(x=>x>=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'));selectedDay=first||dates[0]||today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');viewMonth=selectedDay.slice(0,7)}
+ const [y,m]=viewMonth.split('-').map(Number);$('monthLabel').textContent=y+' 年 '+m+' 月';
+ const offset=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate(),set=new Set(dates);
+ let cells=['日','一','二','三','四','五','六'].map(x=>'<span class="dow">'+x+'</span>').join('')+'<span class="blank"></span>'.repeat(offset);
+ for(let i=1;i<=count;i++){const d=viewMonth+'-'+String(i).padStart(2,'0');cells+='<button class="'+(set.has(d)?'has ':'')+(selectedDay===d?'selected':'')+'" onclick="chooseDay(\''+d+'\')">'+i+'</button>'}
+ $('calendarGrid').innerHTML=cells;
+ const d=data.capacity.find(x=>x.date===selectedDay);
+ if(!d){$('results').innerHTML='<div class="detail"><strong>'+esc(selectedDay)+'（'+weekday(selectedDay)+'）</strong><p class="muted">當日沒有有效訂單產能。</p></div>';return}
+ const row=(title,x)=>'<div><strong>'+title+'：</strong>'+fmt(x)+'</div>';
+ $('results').innerHTML='<div class="detail"><div class="total">'+esc(d.date.slice(5).replace('-','/'))+'（'+weekday(d.date)+'）合計 '+d.pans+' 盤</div><div class="muted">共 '+d.total+' 顆／上限 '+d.limit+' 顆，剩餘 '+d.remaining+' 顆</div><hr>'+row('上午製作（含宅配）',d.morning)+row('下午製作',d.afternoon)+'</div>'+
+ '<div class="detail"><h3>門市自取｜'+d.pickup.pans+' 盤</h3><div>'+fmt(d.pickup)+'</div><hr>'+pickupSlotRows(d)+(d.unclassified.pieces?'<p class="muted">未分類時段：'+fmt(d.unclassified)+'（請檢查 D 欄）</p>':'')+'</div>'+
+ '<div class="detail"><h3>宅配合計（全部計入上午）</h3>'+fmt(d.delivery)+'</div>';
+}
+
+function collect(id){
+ const order=data&&data.pickup.find(o=>o.id===id);if(!order)return;
+ if(!confirm('確認「'+order.name+'」的訂單 '+id+' 已由客人取走？\\n確定後會更新試算表的訂單狀態。'))return;
+ $('message').textContent='正在更新取貨狀態…';
+ document.querySelectorAll('button.collect').forEach(b=>b.disabled=true);
+ google.script.run.withSuccessHandler(r=>{alert(r.already?'這筆訂單先前已標記為已取貨':'已更新為「已取貨」');load()}).withFailureHandler(e=>{alert('更新失敗：'+e.message);load()}).markPickupCollected2027(id);
+}
+load();
+</script></body></html>+esc(res.amount)+(res.duplicate?'（重複送單，未再次建立）':'')+'</div>');}renderNew();$('newMsg').textContent='可繼續填寫下一筆訂單。';}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
 }
 function renderVip(){
  const list=data.vip||[];
