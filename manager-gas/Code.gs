@@ -139,3 +139,30 @@ function mgrCancelVip2027(id){
  const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
  try{const sh=mgrVipSheet_(SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID));if(sh.getLastRow()<2)throw Error('找不到 VIP 單');const rows=sh.getRange(2,1,sh.getLastRow()-1,11).getDisplayValues();const matches=rows.map((r,i)=>r[0]===key?i+2:0).filter(Boolean);if(matches.length!==1)throw Error('找不到唯一 VIP 單');const row=matches[0],status=sh.getRange(row,11).getDisplayValue();if(status==='已取消')return {ok:true,already:true};if(status==='已完成')throw Error('已完成公關單請人工處理');sh.getRange(row,11).setValue('已取消');return {ok:true};}finally{lock.releaseLock();}
 }
+
+/** 私人管理 APP：人工確認已實際收到款項，支援自取與宅配。 */
+function mgrConfirmPayment2027(kind,orderId){
+ if(!['pickup','delivery'].includes(kind))throw Error('訂單類型不正確');
+ const id=String(orderId||'').trim();
+ if(!/^(?:SJ-\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
+ const lock=LockService.getScriptLock();
+ if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後再試');
+ try{
+  const sh=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID).getSheetByName(kind==='pickup'?'門市自取':'宅配到府');
+  if(!sh||sh.getLastRow()<2)throw Error('找不到訂單');
+  const ids=sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().map(r=>String(r[0]).trim());
+  const matches=ids.map((v,i)=>v===id?i+2:0).filter(Boolean);
+  if(matches.length!==1)throw Error(matches.length?'訂單編號重複，請人工處理':'找不到訂單');
+  const row=matches[0],payCol=kind==='pickup'?14:19,verifiedCol=kind==='pickup'?16:21,statusCol=kind==='pickup'?17:24;
+  const status=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
+  if(['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(status))throw Error('此訂單狀態不允許核帳：'+status);
+  const payment=String(sh.getRange(row,payCol).getDisplayValue()).trim();
+  if(payment==='已付款')return {ok:true,already:true,id};
+  if(!['未付款','待核帳','逾期未付'].includes(payment))throw Error('目前付款狀態不允許核帳：'+payment);
+  sh.getRange(row,payCol).setValue('已付款');
+  sh.getRange(row,verifiedCol).setValue(new Date());
+  if(status==='待確認')sh.getRange(row,statusCol).setValue('已確認');
+  SpreadsheetApp.flush();
+  return {ok:true,already:false,id};
+ }finally{lock.releaseLock();}
+}
