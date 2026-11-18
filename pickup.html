@@ -18,13 +18,13 @@ button,input,select,textarea{font-size:inherit}
 .pickup-time-column .help{margin:12px 0 0}
 @media(max-width:650px){.pickup-datetime-grid{grid-template-columns:1fr;gap:12px}.pickup-time-column{padding:14px}}
 </style></head><body><header><nav><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a></div></nav></header><main>
-<section class="panel"><a href="order.html">← 返回訂購方式</a><h1>現場自取</h1><p class="muted">116 年中秋蛋黃酥預購・表單預覽版</p><p class="notice">目前僅供檢查流程與試算，尚未開放正式送單。</p></section>
+<section class="panel"><a href="order.html">← 返回訂購方式</a><h1>現場自取</h1><p class="muted">116 年中秋蛋黃酥預購</p><p class="notice">請確認訂購資訊及取貨日期，送出後將產生訂單編號。</p></section>
 <section class="flow-guide" aria-label="現場自取訂購流程"><h2>現場自取・訂購流程</h2><p>訂單成立後，請依序完成付款及通知；店家確認款項後，依預約時段領取。</p><div class="flow-steps" style="--flow-count:4"><div class="flow-step"><span class="dot">1</span><strong>官網訂購</strong><small>取得訂單編號</small></div><div class="flow-step"><span class="dot">2</span><strong>匯款並通知</strong><small>LINE 提供後五碼</small></div><div class="flow-step"><span class="dot">3</span><strong>店家核帳</strong><small>確認收到款項</small></div><div class="flow-step"><span class="dot">4</span><strong>預約取貨</strong><small>依指定時段領取</small></div></div><div class="flow-alert"><strong class="payment-title">付款提醒</strong><ol class="payment-list"><li>訂單成立後請於 72 小時內完成匯款，並透過官方 LINE 提供訂單編號及匯款帳號後五碼。</li><li>正式訂單成立頁將顯示專屬繳費截止時間；逾期未付款訂單將取消。</li></ol></div></section><section class="panel"><h2>01｜提貨人姓名／手機</h2><div class="form-grid">
 <div class="form-field"><label for="pickupName">提貨人姓名</label><input id="pickupName" autocomplete="name" placeholder="請填寫提貨人姓名"></div>
 <div class="form-field"><label for="pickupPhone">提貨人聯絡電話（手機／市話）</label><input id="pickupPhone" autocomplete="tel" inputmode="tel" placeholder="例如：0912345678 或 04-1234567"></div>
 
 </div></section>
-<section class="panel"><h2>02｜提貨日期與時段</h2><p class="help">使用小月曆選擇提貨日期。目前先展示 2027/8/1～9/15 供檢查；正式開放日期待確認。</p>
+<section class="panel"><h2>02｜提貨日期與時段</h2><p class="help">使用小月曆選擇提貨日期。可選擇的日期依月曆顯示為準。</p>
 <div class="pickup-datetime-grid">
 <div class="pickup-date-column"><label class="pickup-field-title" for="calendarDays">提貨日期</label>
 <div class="calendar"><div class="cal-top"><button type="button" id="prevMonth" aria-label="上個月">‹</button><strong id="monthTitle"></strong><button type="button" id="nextMonth" aria-label="下個月">›</button></div><div class="weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div class="days" id="calendarDays"></div></div>
@@ -66,19 +66,19 @@ const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK
 let sj27RequestId='';
 function sj27DemoSubmit(){
  const btn=document.getElementById('sj27Send'),msg=document.getElementById('sj27SendMsg');
- if(!SJ27_ORDER_ENDPOINT){msg.textContent='展示模式：尚未連接 TEST 收單網址，未送出任何資料。';return}
+ if(!SJ27_ORDER_ENDPOINT){msg.textContent='訂單服務暫時無法使用，請稍後再試。';return}
  const x=SJ27_COLLECT();
  if(!x.name.trim()||!x.phone.trim()||!x.date||!x.slot){msg.textContent='請完整填寫姓名、電話、日期與時段';return}
  if(document.getElementById('warnings')?.textContent.trim()){msg.textContent='請先修正訂購資料：'+document.getElementById('warnings').textContent;return}
- if(!confirm('確認送出 TEST 訂單？這會寫入測試試算表。'))return;
+ if(!confirm('確認送出訂單？'))return;
  if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);
  const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';
  const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};
  for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}
  document.body.append(form);form.submit();form.remove();
- msg.textContent='已開啟 TEST 收單結果頁，請確認是否顯示訂單編號。';
+ msg.textContent='已開啟訂單結果頁，請確認訂單編號。';
 }
 const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value,date:selected,slot:$('pickupTime').value,six:$('six').value,fifteen:$('fifteen').value,notes:$('pickupNote').value});
-(function(){const b=document.querySelector('button.btn[disabled]');if(!b)return;b.disabled=false;b.id='sj27Send';b.textContent='TEST 訂單送出（主管展示）';b.addEventListener('click',sj27DemoSubmit);const p=document.createElement('p');p.id='sj27SendMsg';p.className='notice';p.textContent='目前為 TEST 測試收單，送出後將寫入測試試算表。';b.after(p);})();
+(function(){const b=document.querySelector('button.btn[disabled]');if(!b)return;b.disabled=false;b.id='sj27Send';b.textContent='確認送出訂單';b.addEventListener('click',sj27DemoSubmit);const p=document.createElement('p');p.id='sj27SendMsg';p.className='notice';p.textContent='目前為 TEST 測試收單，送出後將寫入測試試算表。';b.after(p);})();
 
 </script></body></html>
