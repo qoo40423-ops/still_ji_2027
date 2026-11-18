@@ -327,3 +327,66 @@ function removePaymentEditTrigger2027(){
   triggers.forEach(t=>ScriptApp.deleteTrigger(t));
   Logger.log(JSON.stringify({removed:triggers.length}));
 }
+
+/**
+ * S-05｜72 小時逾期取消安全預覽（READ ONLY）。
+ * 僅「未付款」且已過截止時間、訂單尚有效者可列為候選。
+ * 「待核帳／已付款／退款中／已退款」一律不取消。
+ * 有效日期必須是 Sheets 日期值；文字或缺值會列警告，不會猜測。
+ * 目前不取消、不修改付款狀態、不釋放產能、不建立定時觸發器。
+ */
+function previewOverdueCancellation2027(){
+  const now=new Date();
+  const result={
+    mode:'READ ONLY',checkedAt:Utilities.formatDate(now,SJ27.TZ,'yyyy/MM/dd HH:mm:ss'),
+    candidates:[],protected:[],warnings:[],counts:{pickup:0,delivery:0}
+  };
+  const specs=[
+    {name:SJ27.PICKUP,key:'pickup',deadline:13,payment:14,status:17,pieces:9},
+    {name:SJ27.DELIVERY,key:'delivery',deadline:18,payment:19,status:24,pieces:12}
+  ];
+  for(const spec of specs){
+    const sh=sjSheet_(spec.name),last=sh.getLastRow();
+    if(last<2)continue;
+    const rows=sh.getRange(2,1,last-1,spec.status).getValues();
+    for(let i=0;i<rows.length;i++){
+      const row=rows[i],orderId=String(row[0]||'').trim();
+      if(!orderId)continue;
+      result.counts[spec.key]++;
+      const payment=String(row[spec.payment-1]||'').trim();
+      const status=String(row[spec.status-1]||'').trim();
+      if(!sjStatusActive_(status))continue;
+      if(['待核帳','已付款','退款中','已退款'].includes(payment)){
+        result.protected.push({sheet:spec.name,row:i+2,orderId,payment});
+        continue;
+      }
+      if(payment!=='未付款'){
+        result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'非預期付款狀態，需人工確認',payment});
+        continue;
+      }
+      const deadline=row[spec.deadline-1];
+      if(!(deadline instanceof Date)||!Number.isFinite(deadline.getTime())){
+        result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'付款截止時間不是有效日期，略過'});
+        continue;
+      }
+      if(deadline.getTime()>=now.getTime())continue;
+      const pieces=Number(row[spec.pieces-1]);
+      if(!Number.isSafeInteger(pieces)||pieces<0){
+        result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'蛋黃酥顆數異常，略過'});
+        continue;
+      }
+      result.candidates.push({
+        sheet:spec.name,row:i+2,orderId,payment,status,
+        deadline:Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm'),
+        pieces,proposedPayment:'逾期未付',proposedStatus:'已取消'
+      });
+    }
+  }
+  result.candidateCount=result.candidates.length;
+  Logger.log('===== S-05 逾期取消預覽｜READ ONLY =====');
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+function testPreviewOverdueCancellation2027(){
+  return previewOverdueCancellation2027();
+}
