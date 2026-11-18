@@ -77,7 +77,7 @@ function sjDuplicate_(requestId){
 }
 /** 只做唯讀檢查；不建立工作表、不清除任何資料。 */
 function inspect2027(){
-  const result={spreadsheet:sjSpreadsheet_().getName(),sheets:{}};
+  const result={spreadsheet:sjSpreadsheet_().getName(),timeZone:sjSpreadsheet_().getSpreadsheetTimeZone(),sheets:{}};
   [SJ27.PICKUP,SJ27.DELIVERY,SJ27.SUMMARY].forEach(name=>{
     const sh=sjSheet_(name);
     result.sheets[name]={headersOk:true,existingOrders:name===SJ27.SUMMARY?null:sjDataRows_(name).length};
@@ -137,6 +137,8 @@ function createOrder2027(data){
     const used=sjUsage_(date).total;
     if(used+pieces>SJ27.LIMIT)throw Error('當日產能不足，剩餘 '+(SJ27.LIMIT-used)+' 顆');
     const row=sjNextRow_(sh);
+    // 電話必須以純文字保存，避免 Google Sheets 自動移除開頭的 0。
+    sh.getRange(row,method==='自取'?6:5).setNumberFormat('@');
     sh.getRange(row,1,1,values.length).setValues([values]);
     sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');
     sh.getRange(row,method==='自取'?13:18).setNumberFormat('yyyy/mm/dd hh:mm');
