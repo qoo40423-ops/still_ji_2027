@@ -511,3 +511,59 @@ function applyOverdueTestCancellation2027(){
     return result;
   }finally{lock.releaseLock();}
 }
+
+/**
+ * S-06A｜批次取消規則預演（READ ONLY）。
+ * 讀取兩張既有訂單表，核對已逾期的未付款／逾期未付訂單。
+ * 只有「待確認／待付款」可進入候選；已付款、待核帳、退款中、已取消皆受保護。
+ * 每筆候選計算可釋放顆數，依日期彙整，但完全不寫入、不裝定時觸發器。
+ */
+function previewBatchOverdue2027(){
+  const now=new Date(),result={
+    mode:'READ ONLY',checkedAt:Utilities.formatDate(now,SJ27.TZ,'yyyy/MM/dd HH:mm:ss'),
+    candidates:[],protectedCount:0,warnings:[],releaseByDate:{},
+    scanned:{pickup:0,delivery:0}
+  };
+  const specs=[
+    {name:SJ27.PICKUP,key:'pickup',pay:14,status:17,deadline:13,pieces:9,date:3},
+    {name:SJ27.DELIVERY,key:'delivery',pay:19,status:24,deadline:18,pieces:12,date:3}
+  ];
+  for(const spec of specs){
+    const sh=sjSheet_(spec.name),last=sh.getLastRow();
+    if(last<2)continue;
+    const rows=sh.getRange(2,1,last-1,spec.status).getValues();
+    for(let i=0;i<rows.length;i++){
+      const v=rows[i],orderId=String(v[0]||'').trim();
+      if(!orderId)continue;
+      result.scanned[spec.key]++;
+      const pay=String(v[spec.pay-1]||'').trim();
+      const status=String(v[spec.status-1]||'').trim();
+      if(!sjStatusActive_(status)){result.protectedCount++;continue;}
+      if(['已付款','待核帳','退款中','已退款'].includes(pay)){
+        result.protectedCount++;continue;
+      }
+      if(!['未付款','逾期未付'].includes(pay)){
+        result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'不認識的付款狀態',pay});continue;
+      }
+      if(!['待確認','待付款'].includes(status)){
+        result.protectedCount++;continue;
+      }
+      const deadline=v[spec.deadline-1],pieces=Number(v[spec.pieces-1]);
+      const date=sjDateValue_(v[spec.date-1]);
+      if(!(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
+         !Number.isSafeInteger(pieces)||pieces<=0||!/^2027-(08|09)-\\d{2}$/.test(date)){
+        result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'期限、顆數或製作日期異常'});continue;
+      }
+      if(deadline.getTime()>=now.getTime())continue;
+      const item={sheet:spec.name,row:i+2,orderId,payment:pay,status,
+        deadline:Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm'),
+        date,pieces,proposedPayment:'逾期未付',proposedStatus:'已取消'};
+      result.candidates.push(item);
+      result.releaseByDate[date]=(result.releaseByDate[date]||0)+pieces;
+    }
+  }
+  result.candidateCount=result.candidates.length;
+  Logger.log('===== S-06A 批次逾期取消預演｜READ ONLY =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+function testPreviewBatchOverdue2027(){return previewBatchOverdue2027();}
