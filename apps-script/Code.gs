@@ -13,6 +13,19 @@ const SJ27 = Object.freeze({
   DELIVERY_HEADERS: ['訂單編號','成立時間','出貨日期','收件人','聯絡電話','收件地址','6入4盒組','6入10盒組','6入15盒組','15入盒數','提袋數','蛋黃酥顆數','商品金額','提袋費','基本運費','偏遠加價','應付總額','付款截止時間','付款狀態','匯款後五碼','核帳日期','宅配單確認','黑貓單號','訂單狀態','備註'],
   SUMMARY_HEADERS: ['製作日期','自取顆數','宅配顆數','合計顆數','換算盤數','剩餘顆數','每日上限','狀態']
 });
+/** 五碼訂單號：跨自取／宅配表檢查，保留舊編號且不重複使用。 */
+function sj27ShortOrderId_(ss){
+ const used=new Set();
+ for(const name of [SJ27.PICKUP,SJ27.DELIVERY]){
+  const sh=ss.getSheetByName(name);
+  if(sh&&sh.getLastRow()>1)sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().forEach(r=>used.add(String(r[0]).trim().toUpperCase()));
+ }
+ for(let n=0;n<200;n++){
+  const id='SJ-'+String(Math.floor(Math.random()*90000)+10000);
+  if(!used.has(id))return id;
+ }
+ throw Error('暫時無法產生唯一訂單編號，請稍後重試');
+}
 function sjSpreadsheet_(){return SpreadsheetApp.openById(SJ27.SPREADSHEET_ID);}
 function sjSheet_(name){
   const sh=sjSpreadsheet_().getSheetByName(name);
@@ -107,7 +120,7 @@ function createOrder2027(data){
     const dup=sjDuplicate_(rid);if(dup)return dup;
     let pieces,values,sh;
     const created=new Date(),deadline=new Date(created.getTime()+SJ27.PAY_HOURS*3600000);
-    const orderId='SJ27-'+Utilities.formatDate(created,SJ27.TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
+    const orderId=sj27ShortOrderId_(sjSpreadsheet_());
     if(method==='自取'){
       const six=sjNum_(data.sixBoxes,'6入盒數'),fifteen=sjNum_(data.fifteenBoxes,'15入盒數');
       pieces=six*6+fifteen*15;
@@ -489,7 +502,7 @@ function submitPickupRemittance2027(data){
   const orderId=String(data.orderId||'').trim().toUpperCase();
   const phone=sjPhone_(data.phone);
   const last5=String(data.last5||'').trim();
-  if(!/^SJ27-[0-9]{6}-[A-F0-9]{8}$/.test(orderId))throw Error('訂單編號格式不正確');
+  if(!/^(?:SJ-\\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8})$/.test(orderId))throw Error('訂單編號格式不正確');
   if(!/^\d{5}$/.test(last5)||last5==='88888')throw Error('請填寫有效的匯款帳號後五碼');
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))throw Error('目前系統忙碌，請稍後再試');
@@ -753,7 +766,7 @@ function sj27PublicCreate_(p,respond){
   if(!sh)throw Error('訂單工作表不存在');
   const tag='[WEB:'+rid+']';
   if(sh.getLastRow()>1){const rows=sh.getRange(2,1,sh.getLastRow()-1,width).getDisplayValues(),found=rows.find(v=>String(v[width-1]).includes(tag));if(found)return respond('訂單已成立，編號：'+found[0]+'（重複送出未新增）',true);}
-  const now=new Date(),deadline=new Date(now.getTime()+72*3600000),id='SJ27-'+Utilities.formatDate(now,'Asia/Taipei','yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase(),weekday=new Date(date+'T00:00:00Z').getUTCDay();
+  const now=new Date(),deadline=new Date(now.getTime()+72*3600000),id=sj27ShortOrderId_(ss),weekday=new Date(date+'T00:00:00Z').getUTCDay();
   let pieces,values;
   if(kind==='pickup'){
    const a=count(p.six,'6入'),b=count(p.fifteen,'15入'),slot=safe(p.slot,20);
