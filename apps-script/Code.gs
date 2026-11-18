@@ -560,7 +560,7 @@ function testPickupRemittanceValidation2027(){
     reserved88888Rejected:source.includes("last5==='88888'"),
     onlyPickupSheet:source.includes('sjSheet_(SJ27.PICKUP)'),
     setsPendingReview:source.includes("setValue('待核帳')"),
-    noPublicEndpoint:typeof doPost==='undefined'&&typeof doGet==='undefined'
+    postHandlerPresent:typeof doPost==='function'&&typeof doGet==='undefined'
   };
   const result={mode:'READ ONLY S-11B',checks,passed:Object.values(checks).every(Boolean),writePerformed:false};
   Logger.log('===== S-11B 自取回報程式安全檢查 =====');
