@@ -51,7 +51,7 @@ function managerSnapshot2027(){
 /** 僅允許已核帳的自取訂單標記已取貨；操作僅更新 Q 欄。 */
 function markPickupCollected2027(orderId){
  const id=String(orderId||'').trim();
- if(!/^(?:SJ-\\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
+ if(!/^(?:SJ-\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
  const lock=LockService.getScriptLock();
  if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後重試');
  try{
