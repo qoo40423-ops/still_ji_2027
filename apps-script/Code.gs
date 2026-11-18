@@ -551,7 +551,7 @@ function previewBatchOverdue2027(){
       const deadline=v[spec.deadline-1],pieces=Number(v[spec.pieces-1]);
       const date=sjDateValue_(v[spec.date-1]);
       if(!(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
-         !Number.isSafeInteger(pieces)||pieces<=0||!/^2027-(08|09)-\\d{2}$/.test(date)){
+         !Number.isSafeInteger(pieces)||pieces<=0||!/^2027-(08|09)-\d{2}$/.test(date)){
         result.warnings.push({sheet:spec.name,row:i+2,orderId,reason:'期限、顆數或製作日期異常'});continue;
       }
       if(deadline.getTime()>=now.getTime())continue;
