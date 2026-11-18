@@ -1,167 +1,176 @@
 /**
- * STILL JI 2027 Mid-Autumn - Apps Script backend (TEST template)
- * Standalone Google Spreadsheet; 自取訂單 / 宅配訂單 / 每日產能統計.
- * Script Properties: SPREADSHEET_ID. Deploy as Web App only after testing.
- * IMPORTANT: Do not deploy as public write API until abuse controls are in place.
+ * 紀家烘焙坊｜116 年中秋 TEST 後端（僅限 Apps Script 編輯器內部執行）
+ * 對應現有 Google 試算表：門市自取／宅配到府／每日產能統計。
+ * 不含 doPost / doGet，不會公開接單。請勿將任何金鑰放進 GitHub。
  */
-const CONFIG = Object.freeze({
-  PICKUP: '自取訂單',
-  DELIVERY: '宅配訂單',
-  SUMMARY: '每日產能統計',
-  CAPACITY: 4800,
-  TZ: 'Asia/Taipei',
-  HEADERS: ['訂單編號','建立時間','訂購方式','姓名','電話','製作日期','出貨日期','取貨日期','商品明細JSON','6入盒數','15入盒數','蛋黃酥顆數','盤數(進位)','商品金額','提袋金額','運費','偏遠加價','應付總額','付款狀態','訂單狀態','備註','黑貓單號','客戶請求識別碼']
+const SJ27 = Object.freeze({
+  SPREADSHEET_ID: '1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4',
+  PICKUP: '門市自取', DELIVERY: '宅配到府', SUMMARY: '每日產能統計',
+  LIMIT: 4800, TZ: 'Asia/Taipei', PAY_HOURS: 72,
+  PICKUP_HEADERS: ['訂單編號','成立時間','取貨日期','取貨時段','提貨人','聯絡電話','6入盒數','15入盒數','蛋黃酥顆數','商品金額','優惠類型','應付總額','付款截止時間','付款狀態','匯款後五碼','核帳日期','訂單狀態','備註'],
+  DELIVERY_HEADERS: ['訂單編號','成立時間','出貨日期','收件人','聯絡電話','收件地址','6入4盒組','6入10盒組','6入15盒組','15入盒數','提袋數','蛋黃酥顆數','商品金額','提袋費','基本運費','偏遠加價','應付總額','付款截止時間','付款狀態','匯款後五碼','核帳日期','宅配單確認','黑貓單號','訂單狀態','備註'],
+  SUMMARY_HEADERS: ['製作日期','自取顆數','宅配顆數','合計顆數','換算盤數','剩餘顆數','每日上限','狀態']
 });
-function setup2027(){
-  const ss=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID'));
-  for(const name of [CONFIG.PICKUP,CONFIG.DELIVERY]){
-    let sh=ss.getSheetByName(name);
-    if(!sh)sh=ss.insertSheet(name);
-    if(sh.getLastRow()===0)sh.appendRow(CONFIG.HEADERS);
-    const h=sh.getRange(1,1,1,CONFIG.HEADERS.length).getDisplayValues()[0];
-    if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error(name+' 表頭不一致，為避免覆寫資料已停止');
-    sh.setFrozenRows(1);
-    sh.getRange(1,1,1,CONFIG.HEADERS.length).setFontWeight('bold');
-  }
-  let summary=ss.getSheetByName(CONFIG.SUMMARY);
-  if(!summary)summary=ss.insertSheet(CONFIG.SUMMARY);
-  const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('系統忙碌');
-  try{refreshCapacitySummary_();}finally{lock.releaseLock();}
-  return '自取訂單、宅配訂單、每日產能統計已建立';
-}
-function requiredProperty_(key){
-  const value=PropertiesService.getScriptProperties().getProperty(key);
-  if(!value)throw Error('缺少 Script Property: '+key);
-  return value;
-}
-function sheet_(method){
-  const name=method==='自取'?CONFIG.PICKUP:method==='宅配'?CONFIG.DELIVERY:null;
-  if(!name)throw Error('訂購方式錯誤');
-  const sh=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID')).getSheetByName(name);
-  if(!sh)throw Error('請先執行 setup2027：'+name);
-  const h=sh.getRange(1,1,1,CONFIG.HEADERS.length).getDisplayValues()[0];
-  if(h.join('|')!==CONFIG.HEADERS.join('|'))throw Error(name+' 表頭不符');
+function sjSpreadsheet_(){return SpreadsheetApp.openById(SJ27.SPREADSHEET_ID);}
+function sjSheet_(name){
+  const sh=sjSpreadsheet_().getSheetByName(name);
+  if(!sh)throw Error('找不到工作表：'+name);
+  const expected=name===SJ27.PICKUP?SJ27.PICKUP_HEADERS:name===SJ27.DELIVERY?SJ27.DELIVERY_HEADERS:SJ27.SUMMARY_HEADERS;
+  const actual=sh.getRange(1,1,1,expected.length).getDisplayValues()[0];
+  if(expected.some((h,i)=>h!==actual[i]))throw Error(name+' 表頭不符，已停止寫入，請勿直接改欄位順序');
   return sh;
 }
-function dateCell_(value){
-  if(value instanceof Date)return Utilities.formatDate(value,CONFIG.TZ,'yyyy-MM-dd');
-  return String(value==null?'':value).trim();
-}
-function orderRows_(sh){
-  return sh.getLastRow()<2?[]:sh.getRange(2,1,sh.getLastRow()-1,CONFIG.HEADERS.length).getValues();
-}
-function allRows_(){return orderRows_(sheet_('自取')).concat(orderRows_(sheet_('宅配')));}
-function n_(x,name){const v=Number(x);if(!Number.isSafeInteger(v)||v<0)throw Error(name+'必須為非負整數');return v;}
-function text_(x,max){const s=String(x==null?'':x).trim();if(s.length>max)throw Error('輸入字數超過限制');return s;}
-function validDate_(s){
-  if(!/^2027-\d{2}-\d{2}$/.test(s))throw Error('日期格式錯誤');
+function sjText_(x,max,label){const v=String(x==null?'':x).trim();if(v.length>max)throw Error(label+'過長');return v;}
+function sjNum_(x,label){const n=Number(x==null||x===''?0:x);if(!Number.isSafeInteger(n)||n<0)throw Error(label+'須為非負整數');return n;}
+function sjDate_(v){
+  const s=sjText_(v,10,'日期');
+  if(!/^2027-(08|09)-\d{2}$/.test(s))throw Error('目前僅接受 2027 年 8～9 月測試日期');
   const d=new Date(s+'T00:00:00Z');
-  if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==s)throw Error('日期無效');
-  return d;
+  if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==s||s>'2027-09-15')throw Error('日期無效或超出測試範圍');
+  if(s<Utilities.formatDate(new Date(),SJ27.TZ,'yyyy-MM-dd'))throw Error('不可選擇過去日期');
+  return s;
 }
-function taiwanToday_(){return Utilities.formatDate(new Date(),CONFIG.TZ,'yyyy-MM-dd');}
-function weekday_(date){return validDate_(date).getUTCDay();}
-function normalizedOrder_(data){
-  if(!data||typeof data!=='object')throw Error('缺少訂單內容');
-  const method=text_(data.method,12);
-  if(method!=='自取'&&method!=='宅配')throw Error('訂購方式錯誤');
-  const name=text_(data.name,60),phone=text_(data.phone,30);
-  if(!name||!phone)throw Error('姓名與電話不可空白');
-  const date=text_(data.productionDate,10);
-  validDate_(date);
-  if(date<taiwanToday_())throw Error('不能選擇過去的日期');
-  const six=n_(data.sixBoxes||0,'6入盒數'),fifteen=n_(data.fifteenBoxes||0,'15入盒數');
-  const four=n_(data.four||0,'4盒組'),ten=n_(data.ten||0,'10盒組'),group=n_(data.fifteenGroup||0,'15盒組');
-  const bags=n_(data.bags||0,'提袋數');
-  if(method==='宅配'){
-    if(weekday_(date)===0||weekday_(date)===6)throw Error('宅配週六、週日不可出貨');
-    if(four>0&&date>'2027-08-31')throw Error('6入4盒組超過最晚出貨日');
-    if(group>0&&date>'2027-09-10')throw Error('6入15盒組超過最晚出貨日');
-    if(six!==four*4+ten*10+group*15)throw Error('6入宅配盒數與組合不一致');
-    if(fifteen>0&&fifteen<4)throw Error('15入宅配至少4盒');
-    if(bags>0&&group===0)throw Error('目前提袋僅支援6入15盒組');
-  }else{
-    if(four||ten||group)throw Error('自取不可填宅配組合');
-    if(bags)throw Error('自取贈袋尚未定案，暫不接受提袋數');
-    const pickupTime=text_(data.pickupTime,10);
-    if(pickupTime!=='上午'&&pickupTime!=='下午')throw Error('請選擇提貨時段');
-    if(date==='2027-09-15'&&pickupTime!=='上午')throw Error('中秋節當天僅開放上午10點前提貨');
-    if((six>0&&fifteen===0&&six<8)||(fifteen>0&&six===0&&fifteen<3)||(six>0&&fifteen>0&&six*6+fifteen*15<42))throw Error('未達訂單最小數量標準，僅能現場購買，敬請見諒');
+function sjPhone_(v){
+  const s=sjText_(v,30,'電話').replace(/[\s()－-]/g,'');
+  if(!/^(09\d{8}|0[2-8]\d{7,8}(?:#\d{1,6})?)$/.test(s))throw Error('請輸入有效的手機或市話');
+  return s;
+}
+function sjRemote_(address){return /^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\s/g,''));}
+function sjAddress_(v){
+  const a=sjText_(v,200,'地址');
+  if(a.length<8)throw Error('請填寫完整宅配地址');
+  if(/^(澎湖|金門|連江|馬祖|小琉球|綠島|蘭嶼)/.test(a))throw Error('目前僅提供臺灣本島宅配');
+  return a;
+}
+function sjStatusActive_(v){return !['已取消','取消','作廢','退款完成','已退款'].includes(String(v||'').trim());}
+function sjDataRows_(name){
+  const sh=sjSheet_(name),width=name===SJ27.PICKUP?SJ27.PICKUP_HEADERS.length:SJ27.DELIVERY_HEADERS.length;
+  if(sh.getLastRow()<2)return [];
+  return sh.getRange(2,1,sh.getLastRow()-1,width).getValues().filter(r=>String(r[0]||'').trim());
+}
+function sjDateValue_(v){return v instanceof Date?Utilities.formatDate(v,SJ27.TZ,'yyyy-MM-dd'):String(v||'').trim();}
+function sjUsage_(date){
+  let pickup=0,delivery=0;
+  sjDataRows_(SJ27.PICKUP).forEach(r=>{if(sjDateValue_(r[2])===date&&sjStatusActive_(r[16]))pickup+=Number(r[8])||0;});
+  sjDataRows_(SJ27.DELIVERY).forEach(r=>{if(sjDateValue_(r[2])===date&&sjStatusActive_(r[23]))delivery+=Number(r[11])||0;});
+  return {pickup,delivery,total:pickup+delivery};
+}
+function sjNextRow_(sh){
+  const last=Math.max(2,sh.getLastRow());
+  const ids=sh.getRange(2,1,last-1,1).getDisplayValues();
+  const index=ids.findIndex(r=>!String(r[0]).trim());
+  const row=index<0?last+1:index+2;
+  if(row>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),Math.max(100,row-sh.getMaxRows()));
+  return row;
+}
+function sjDuplicate_(requestId){
+  if(!requestId)return null;
+  for(const name of [SJ27.PICKUP,SJ27.DELIVERY]){
+    const sh=sjSheet_(name),last=sh.getLastRow();
+    if(last<2)continue;
+    const notesCol=name===SJ27.PICKUP?18:25;
+    const rows=sh.getRange(2,1,last-1,notesCol).getDisplayValues();
+    const hit=rows.find(r=>r[0]&&r[notesCol-1].includes('[RID:'+requestId+']'));
+    if(hit)return {orderId:hit[0],duplicate:true};
   }
-  const pieces=six*6+fifteen*15;
-  if(!pieces||pieces>CONFIG.CAPACITY)throw Error('訂單顆數必須介於1至4800顆');
-  const bagSplit=group?Array.from({length:group},(_,i)=>Math.floor(bags/group)+(i<bags%group?1:0)):[];
-  const shippingSix=method==='宅配'?four*150+ten*170+bagSplit.reduce((a,b)=>a+(b>=5?210:170),0):0;
-  const cartons15=method==='宅配'?Math.ceil(fifteen/10):0;
-  const shipping15=cartons15*210;
-  const remote=method==='宅配'&&data.remote===true;
-  const remoteFee=remote?(four+ten+group+cartons15)*10:0;
-  const goods=six*300+fifteen*750;
-  const bagAmount=bags*20;
-  const detail=JSON.stringify({four,ten,fifteenGroup:group,bags,bagSplit,remote,pickupTime:method==='自取'?text_(data.pickupTime,10):''});
-  return {method,name,phone,date,six,fifteen,pieces,goods,bagAmount,shipping:shippingSix+shipping15,remoteFee,total:goods+bagAmount+shippingSix+shipping15+remoteFee,detail,requestId:text_(data.requestId,100),notes:text_(data.notes,300)};
+  return null;
 }
-function activeStatus_(status){return !['已取消','取消','作廢','退款完成'].includes(String(status).trim());}
-function usage_(date){
-  return allRows_().reduce((sum,r)=>sum+(dateCell_(r[5])===date&&activeStatus_(r[19])?Number(r[11])||0:0),0);
-}
-function refreshCapacitySummary_(){
-  const ss=SpreadsheetApp.openById(requiredProperty_('SPREADSHEET_ID'));
-  const sh=ss.getSheetByName(CONFIG.SUMMARY);
-  if(!sh)throw Error('請先執行 setup2027');
-  const map={};
-  for(const [method,rows] of [['自取',orderRows_(sheet_('自取'))],['宅配',orderRows_(sheet_('宅配'))]]){
-    for(const r of rows){
-      const date=dateCell_(r[5]);
-      if(!/^2027-\d{2}-\d{2}$/.test(date)||!activeStatus_(r[19]))continue;
-      const pieces=Number(r[11])||0;
-      if(!map[date])map[date]={pickup:0,delivery:0};
-      map[date][method==='自取'?'pickup':'delivery']+=pieces;
-    }
-  }
-  const values=[['製作日期','自取顆數','宅配顆數','已使用顆數','已使用盤數(進位)','剩餘顆數','每日上限','狀態']];
-  Object.keys(map).sort().forEach(date=>{
-    const p=map[date].pickup,d=map[date].delivery,total=p+d;
-    values.push([date,p,d,total,Math.ceil(total/60),Math.max(0,CONFIG.CAPACITY-total),CONFIG.CAPACITY,total>CONFIG.CAPACITY?'超量':total===CONFIG.CAPACITY?'額滿':'可接單']);
+/** 只做唯讀檢查；不建立工作表、不清除任何資料。 */
+function inspect2027(){
+  const result={spreadsheet:sjSpreadsheet_().getName(),sheets:{}};
+  [SJ27.PICKUP,SJ27.DELIVERY,SJ27.SUMMARY].forEach(name=>{
+    const sh=sjSheet_(name);
+    result.sheets[name]={headersOk:true,existingOrders:name===SJ27.SUMMARY?null:sjDataRows_(name).length};
   });
-  sh.clearContents();
-  sh.getRange(1,1,values.length,values[0].length).setValues(values);
-  sh.setFrozenRows(1);
-  sh.getRange(1,1,1,values[0].length).setFontWeight('bold');
-  return values.length-1;
+  Logger.log(JSON.stringify(result));return result;
 }
-/** Manual refresh after editing a status, date or quantity in the spreadsheet. */
-function refreshCapacitySummary2027(){
-  const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('系統忙碌');
-  try{return refreshCapacitySummary_();}finally{lock.releaseLock();}
-}
-/** Called only from trusted server-side order creation flow. */
+/**
+ * 內部測試建立訂單。需提供唯一 requestId (至少 12 字)。
+ * pickup: {method:'自取',name,phone,date,pickupTime,sixBoxes,fifteenBoxes,notes,requestId}
+ * delivery: {method:'宅配',name,phone,date,address,four,ten,fifteenGroup,fifteenBoxes,bags,notes,requestId}
+ * 不信任前端傳入的價格、運費、優惠碼或付款狀態。
+ */
 function createOrder2027(data){
-  const order=normalizedOrder_(data);
-  if(!order.requestId||order.requestId.length<12)throw Error('缺少有效的請求識別碼');
+  if(!data||typeof data!=='object')throw Error('缺少訂單資料');
+  const method=sjText_(data.method,10,'方式');
+  if(method!=='自取'&&method!=='宅配')throw Error('訂購方式錯誤');
+  const name=sjText_(data.name,60,'姓名'),phone=sjPhone_(data.phone),date=sjDate_(data.date||data.productionDate);
+  if(!name)throw Error('姓名不可空白');
+  const rid=sjText_(data.requestId,100,'請求識別碼');
+  if(!/^[a-zA-Z0-9_-]{12,100}$/.test(rid))throw Error('請提供至少 12 字的唯一 requestId');
+  const notes=sjText_(data.notes,300,'備註');
   const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('系統忙碌，請稍後重試');
+  if(!lock.tryLock(30000))throw Error('系統忙碌，請稍後再試');
   try{
-    const sh=sheet_(order.method);
-    // Idempotency: repeated submits return existing order without consuming capacity twice.
-    const existing=allRows_().find(r=>String(r[22])===order.requestId);
-    if(existing)return {ok:true,orderId:String(existing[0]),duplicate:true};
-    const used=usage_(order.date);
-    if(used+order.pieces>CONFIG.CAPACITY)throw Error('該日期剩餘產能不足：剩餘 '+Math.max(0,CONFIG.CAPACITY-used)+' 顆');
-    const id='SJ27-'+Utilities.formatDate(new Date(),CONFIG.TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
-    sh.appendRow([id,new Date(),order.method,order.name,order.phone,order.date,order.method==='宅配'?order.date:'',order.method==='自取'?order.date:'',order.detail,order.six,order.fifteen,order.pieces,Math.ceil(order.pieces/60),order.goods,order.bagAmount,order.shipping,order.remoteFee,order.total,'未付款','待確認',order.notes,'',order.requestId]);
+    const dup=sjDuplicate_(rid);if(dup)return dup;
+    let pieces,values,sh;
+    const created=new Date(),deadline=new Date(created.getTime()+SJ27.PAY_HOURS*3600000);
+    const orderId='SJ27-'+Utilities.formatDate(created,SJ27.TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
+    if(method==='自取'){
+      const six=sjNum_(data.sixBoxes,'6入盒數'),fifteen=sjNum_(data.fifteenBoxes,'15入盒數');
+      pieces=six*6+fifteen*15;
+      if(!pieces||(six&&!fifteen&&six<8)||(fifteen&&!six&&fifteen<3)||(six&&fifteen&&pieces<42))throw Error('未達訂單最小數量標準，僅能現場購買，敬請見諒');
+      const time=sjText_(data.pickupTime,15,'取貨時段'),weekend=[0,6].includes(new Date(date+'T00:00:00Z').getUTCDay());
+      const allowed=date==='2027-09-15'?['09:00–10:00']:weekend?['09:00–12:00','13:00–15:00','15:00–17:00','17:00–18:00']:['13:00–15:00','15:00–17:00','17:00–18:00'];
+      if(!allowed.includes(time))throw Error('取貨時段不符合選定日期');
+      // 員工價須經管理端授權；備註 8888 不會自行觸發折扣。
+      const staff=data.staffApproved===true;
+      if(staff)throw Error('員工優惠尚未啟用後端授權，請先以原價測試');
+      const goods=six*300+fifteen*750;
+      values=[orderId,created,date,time,name,phone,six,fifteen,pieces,goods,'一般售價',goods,deadline,'未付款','','','待付款',notes+' [RID:'+rid+']'];
+      sh=sjSheet_(SJ27.PICKUP);
+    }else{
+      const address=sjAddress_(data.address),four=sjNum_(data.four,'4盒組'),ten=sjNum_(data.ten,'10盒組'),group=sjNum_(data.fifteenGroup,'15盒組'),fifteen=sjNum_(data.fifteenBoxes,'15入盒數'),bags=sjNum_(data.bags,'提袋');
+      if([0,6].includes(new Date(date+'T00:00:00Z').getUTCDay()))throw Error('週末不提供出貨');
+      if(fifteen>0&&fifteen<4)throw Error('15入宅配至少4盒');
+      if(bags>0&&!group)throw Error('提袋僅限6入15盒組');
+      const six=four*4+ten*10+group*15;pieces=six*6+fifteen*15;
+      if(!pieces)throw Error('請選擇商品');
+      const bagSplit=Array.from({length:group},(_,i)=>Math.floor(bags/group)+(i<bags%group?1:0));
+      const goods=six*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10);
+      const shipping=four*150+ten*170+bagSplit.reduce((sum,n)=>sum+(n>=5?210:170),0)+cartons15*210;
+      const remoteFee=sjRemote_(address)?(four+ten+group+cartons15)*10:0;
+      values=[orderId,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remoteFee,goods+bagFee+shipping+remoteFee,deadline,'未付款','','','待回傳宅配單','','待付款',notes+' [RID:'+rid+']'];
+      sh=sjSheet_(SJ27.DELIVERY);
+    }
+    if(pieces>SJ27.LIMIT)throw Error('單筆訂單超過每日產能上限');
+    const used=sjUsage_(date).total;
+    if(used+pieces>SJ27.LIMIT)throw Error('當日產能不足，剩餘 '+(SJ27.LIMIT-used)+' 顆');
+    const row=sjNextRow_(sh);
+    sh.getRange(row,1,1,values.length).setValues([values]);
+    sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');
+    sh.getRange(row,method==='自取'?13:18).setNumberFormat('yyyy/mm/dd hh:mm');
     SpreadsheetApp.flush();
-    refreshCapacitySummary_();
-    return {ok:true,orderId:id,productionDate:order.date,pieces:order.pieces,total:order.total};
+    refreshCapacitySummary2027_();
+    return {ok:true,orderId,method,date,pieces,total:method==='自取'?values[11]:values[16],paymentDeadline:Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm'),testOnly:true};
   }finally{lock.releaseLock();}
 }
-/** Read-only internal capacity view; do not expose publicly without controls. */
+function refreshCapacitySummary2027_(){
+  const sh=sjSheet_(SJ27.SUMMARY),map={};
+  sjDataRows_(SJ27.PICKUP).forEach(r=>{const date=sjDateValue_(r[2]);if(!/^2027-\d{2}-\d{2}$/.test(date)||!sjStatusActive_(r[16]))return;(map[date]||(map[date]={p:0,d:0})).p+=Number(r[8])||0;});
+  sjDataRows_(SJ27.DELIVERY).forEach(r=>{const date=sjDateValue_(r[2]);if(!/^2027-\d{2}-\d{2}$/.test(date)||!sjStatusActive_(r[23]))return;(map[date]||(map[date]={p:0,d:0})).d+=Number(r[11])||0;});
+  const rows=Object.keys(map).sort().map(date=>{const {p,d}=map[date],total=p+d;return [date,p,d,total,Math.ceil(total/60),Math.max(0,SJ27.LIMIT-total),SJ27.LIMIT,total>SJ27.LIMIT?'超量':total===SJ27.LIMIT?'額滿':'可接單'];});
+  // 只更新統計表 A:H 的資料列，保留 I 欄以後原有說明。
+  const last=Math.max(2,sh.getLastRow());
+  sh.getRange(2,1,last-1,8).clearContent();
+  if(rows.length){if(rows.length+1>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),rows.length+1-sh.getMaxRows());sh.getRange(2,1,rows.length,8).setValues(rows);}
+  return rows.length;
+}
+function refreshCapacitySummary2027(){
+  const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
+  try{return refreshCapacitySummary2027_();}finally{lock.releaseLock();}
+}
 function capacityForDate2027(date){
-  validDate_(date);
-  const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('系統忙碌');
-  try{const used=usage_(date);return {date,limit:CONFIG.CAPACITY,used,remaining:Math.max(0,CONFIG.CAPACITY-used),usedPans:Math.ceil(used/60)};}
-  finally{lock.releaseLock();}
+  const d=sjDate_(date),u=sjUsage_(d);
+  return {date:d,pickup:u.pickup,delivery:u.delivery,used:u.total,remaining:Math.max(0,SJ27.LIMIT-u.total),limit:SJ27.LIMIT,pans:Math.ceil(u.total/60)};
+}
+/** 首次驗證請先執行這個，只讀取資料，不新增訂單。 */
+function testInspect2027(){return inspect2027();}
+/** 確認唯讀檢查通過後，才手動執行這個測試新增一筆自取訂單。 */
+function testCreatePickup2027(){
+  return createOrder2027({method:'自取',name:'測試客人',phone:'0912345678',date:'2027-09-01',pickupTime:'13:00–15:00',sixBoxes:8,fifteenBoxes:0,notes:'TEST 測試資料',requestId:'TEST-PICKUP-2027-0001'});
+}
+/** 確認唯讀檢查通過後，才手動執行這個測試新增一筆宅配訂單。 */
+function testCreateDelivery2027(){
+  return createOrder2027({method:'宅配',name:'測試客人',phone:'0912345678',address:'彰化縣彰化市三民路402-2號',date:'2027-09-02',four:1,ten:0,fifteenGroup:0,fifteenBoxes:0,bags:0,notes:'TEST 測試資料',requestId:'TEST-DELIVERY-2027-0001'});
 }
