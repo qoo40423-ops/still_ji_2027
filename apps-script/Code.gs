@@ -287,27 +287,46 @@ function paymentEditHandler2027(e){
   const isPickup=name===SJ27.PICKUP;
   if(!isPickup&&name!==SJ27.DELIVERY)return;
   const paymentCol=isPickup?14:19,statusCol=isPickup?17:24,verifiedCol=isPickup?16:21;
-  // 只處理單一儲存格的人工修改；大量貼上須人工核對後使用 S-03 同步。
-  if(e.range.getNumRows()!==1||e.range.getNumColumns()!==1||
-     e.range.getRow()<2||e.range.getColumn()!==paymentCol)return;
-  if(String(e.value||'').trim()!=='已付款')return;
+  const codeCol=isPickup?15:null;
+  // 單格人工編輯；門市自取 O 欄輸入 88888，或原本的付款狀態欄改成已付款。
+  if(e.range.getNumRows()!==1||e.range.getNumColumns()!==1||e.range.getRow()<2)return;
+  const editedCol=e.range.getColumn(),editedValue=String(e.value||'').trim();
+  const isCounterPayment=isPickup&&editedCol===codeCol&&editedValue==='88888';
+  const isManualPaid=editedCol===paymentCol&&editedValue==='已付款';
+  if(!isCounterPayment&&!isManualPaid)return;
   const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw Error('付款連動鎖定逾時，請使用 applyPaymentSync2027 補同步');
+  if(!lock.tryLock(30000))throw Error('付款連動鎖定逾時，請人工檢查該筆訂單');
   try{
-    // 重新讀取即時值，避免編輯後被其他人更改。
     const row=e.range.getRow(),orderId=String(sh.getRange(row,1).getValue()||'').trim();
-    const pay=String(sh.getRange(row,paymentCol).getValue()||'').trim();
+    const payCell=sh.getRange(row,paymentCol);
+    const pay=String(payCell.getValue()||'').trim();
     const status=String(sh.getRange(row,statusCol).getValue()||'').trim();
-    if(!orderId||pay!=='已付款'||!sjStatusActive_(status))return;
-    // 已有核帳日期則不覆寫；日期是人工確認時間，不是銀行交易時間。
+    if(!orderId||!sjStatusActive_(status))return;
+    if(isCounterPayment){
+      // 防止退款中、待核帳、已付款等訂單因誤填 88888 而覆寫財務狀態。
+      if(pay!=='未付款'){
+        Logger.log(JSON.stringify({event:'COUNTER_PAYMENT_SKIPPED',sheet:name,row,orderId,payment:pay,reason:'只接受未付款訂單'}));
+        return;
+      }
+      if(String(sh.getRange(row,codeCol).getDisplayValue()).trim()!=='88888')return;
+      payCell.setValue('已付款');
+    }else if(pay!=='已付款'){
+      return;
+    }
     const verified=sh.getRange(row,verifiedCol);
     if(!verified.getValue())verified.setValue(new Date()).setNumberFormat('yyyy/mm/dd hh:mm');
     if(['待付款','待確認'].includes(status))
       sh.getRange(row,statusCol).setValue(isPickup?'已確認':'待出貨');
-    Logger.log(JSON.stringify({event:'PAYMENT_SYNC',sheet:name,row,orderId,statusBefore:status}));
+    Logger.log(JSON.stringify({event:isCounterPayment?'COUNTER_PAYMENT_SYNC':'PAYMENT_SYNC',sheet:name,row,orderId,statusBefore:status}));
   }finally{lock.releaseLock();}
 }
 
+/**
+ * S-04A｜門市付款識別碼 88888 僅限門市自取 O 欄。
+ * 既有安裝型觸發器仍呼叫 paymentEditHandler2027，更新程式後無需重裝。
+ * 只在原付款狀態為「未付款」時自動設「已付款」、補核帳日期及更新狀態。
+ * 注意：88888 表示門市人員已實際收款，不是銀行匯款後五碼。
+ */
 /** 只需執行一次；重複執行會保留既有觸發器，不會重複安裝。 */
 function setupPaymentEditTrigger2027(){
   const name='paymentEditHandler2027';
