@@ -131,11 +131,17 @@ function mgrNewOrder2027(o){
 function mgrNewVip2027(o){
  const date=mgrDate_(o.date),shift=mgrText_(o.shift,2,'時段'),method=mgrText_(o.method,2,'方式'),name=mgrText_(o.name,80,'對象'),six=mgrInt_(o.six||0,'6入'),fifteen=mgrInt_(o.fifteen||0,'15入'),contact=mgrText_(o.contact,200,'聯絡／地址'),notes=mgrText_(o.notes,300,'備註');
  if(!['上午','下午'].includes(shift)||!['自取','宅配'].includes(method)||!name||six*6+fifteen*15<=0)throw Error('請完整填寫 VIP 公關單');
+ const priceType=String(o.priceType||'免費公關').trim();
+ if(!['免費公關','一般售價','員工優惠價','自訂單價'].includes(priceType))throw Error('VIP 價格類型不正確');
+ const prices=priceType==='免費公關'?[0,0]:priceType==='一般售價'?[300,750]:priceType==='員工優惠價'?[285,720]:[Number(o.unitSix),Number(o.unitFifteen)];
+ if(prices.some(n=>!Number.isSafeInteger(n)||n<0||n>100000))throw Error('VIP 單價必須是 0～100000 元整數');
+ const amount=six*prices[0]+fifteen*prices[1];
+ const priceNote=' [價格:'+priceType+'／6入單價:'+prices[0]+'／15入單價:'+prices[1]+'／總額:'+amount+']';
  const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
  try{const ss=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID),sh=mgrVipSheet_(ss),rid=mgrText_(o.requestId,100,'識別碼');if(!/^[a-zA-Z0-9_-]{12,100}$/.test(rid))throw Error('缺少送單識別碼');
  if(sh.getLastRow()>1){const rows=sh.getRange(2,1,sh.getLastRow()-1,12).getDisplayValues();const found=rows.find(r=>r[11].includes('[APP:'+rid+']'));if(found)return {ok:true,duplicate:true,orderId:found[0]};}
  const id='VIP27-'+Utilities.formatDate(new Date(),MANAGER_TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
- sh.appendRow([id,new Date(),date,shift,method,name,six,fifteen,six*6+fifteen*15,contact,'待製作',notes+' [APP:'+rid+']']);return {ok:true,orderId:id,pieces:six*6+fifteen*15};
+ sh.appendRow([id,new Date(),date,shift,method,name,six,fifteen,six*6+fifteen*15,contact,'待製作',notes+priceNote+' [APP:'+rid+']']);return {ok:true,orderId:id,pieces:six*6+fifteen*15,amount};
  }finally{lock.releaseLock();}
 }
 function mgrCancelVip2027(id){
