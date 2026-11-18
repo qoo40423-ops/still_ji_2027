@@ -615,13 +615,14 @@ function testPickupRemittanceWrite2027(){
  */
 function doPost(e){
   const p=e&&e.parameter||{};
+  const isOrder=String(p.action||'')==='create-order';
   const respond=(message,success)=>HtmlService.createHtmlOutput(
     '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-    '<title>自取匯款回報結果｜紀家烘焙坊</title></head>'+
+    '<title>'+(isOrder?'TEST 訂單建立結果':'自取匯款回報結果')+'｜紀家烘焙坊</title></head>'+
     '<body style="font-family:serif;background:#faf6f0;color:#49352b;text-align:center;padding:50px 18px">'+
     '<main style="max-width:520px;margin:auto;background:#fffdfa;border:1px solid #e8dbcf;border-radius:16px;padding:28px">'+
-    '<h2 style="color:#803d50">'+(success?'匯款回報已收到':'匯款回報未完成')+'</h2><p>'+
+    '<h2 style="color:#803d50">'+(isOrder?(success?'TEST 訂單建立成功':'TEST 訂單未成立'):(success?'匯款回報已收到':'匯款回報未完成'))+'</h2><p>'+
     message+'</p><p>您可以關閉此頁，返回紀家烘焙坊網站。</p></main></body></html>');
   if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
     return respond('目前無法受理，請聯繫店家。',false);
