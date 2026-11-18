@@ -625,10 +625,10 @@ function doPost(e){
     message+'</p><p>您可以關閉此頁，返回紀家烘焙坊網站。</p></main></body></html>');
   if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
     return respond('目前無法受理，請聯繫店家。',false);
+  if(String(p.action||'')==='create-order'&&String(p.website||'')==='stillji2027')return sj27PublicCreate_(p,respond);
   // 預設關閉；只有完成公開驗收後才可在 Script Properties 明確設為 ENABLED。
   if(PropertiesService.getScriptProperties().getProperty('SJ27_PUBLIC_REMITTANCE')!=='ENABLED')
     return respond('匯款回報服務尚未開放，請稍後再試。',false);
-  if(String(p.action||'')==='create-order'&&String(p.website||'')==='stillji2027')return sj27PublicCreate_(p,respond);
   if(String(p.action||'')!=='pickup-remittance'||String(p.website||'')!=='stillji2027')
     return respond('請由紀家烘焙坊自取匯款回報頁面送出。',false);
   if(String(p.company||'').trim())return respond('無法完成回報，請稍後再試。',false);
