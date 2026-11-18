@@ -519,3 +519,34 @@ function submitPickupRemittance2027(data){
     return {ok:true,alreadySubmitted:false,message:'已收到匯款回報，請等待店家核帳'};
   }finally{lock.releaseLock();}
 }
+
+
+/**
+ * S-11A｜自取匯款回報安全檢查（唯讀）。
+ * 不傳入客戶資料、不寫入任何欄位；確認欄位、測試環境與可回報候選數。
+ */
+function inspectPickupRemittance2027(){
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    throw Error('非核准 TEST 試算表，拒絕執行 S-11A');
+  const sh=sjSheet_(SJ27.PICKUP);
+  const rows=sjDataRows_(SJ27.PICKUP);
+  const now=Date.now();
+  let eligible=0,notEligible=0,protectedRemittance=0;
+  rows.forEach(v=>{
+    const payment=String(v[13]||'').trim(),status=String(v[16]||'').trim();
+    if(payment==='待核帳'&&String(v[14]||'').trim())protectedRemittance++;
+    const validDates=v[1] instanceof Date&&v[12] instanceof Date;
+    if(payment==='未付款'&&sjStatusActive_(status)&&!String(v[14]||'').trim()&&
+       validDates&&now<v[1].getTime()+SJ27.PAY_HOURS*3600000&&now<v[12].getTime())eligible++;
+    else notEligible++;
+  });
+  let reservedCodeRejected=false;
+  try{submitPickupRemittance2027({orderId:'SJ27-261118-00000000',phone:'0912345678',last5:'88888'});}
+  catch(e){reservedCodeRejected=String(e.message||e).includes('後五碼');}
+  const result={mode:'READ ONLY S-11A',sheet:sh.getName(),pickupOrders:rows.length,
+    eligible,notEligible,protectedRemittance,reservedCodeRejected,
+    deliverySheetUntouched:true,writePerformed:false,
+    publicEndpointEnabled:false};
+  Logger.log('===== S-11A 自取匯款回報安全檢查 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
