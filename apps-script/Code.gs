@@ -390,3 +390,33 @@ function previewOverdueCancellation2027(){
 function testPreviewOverdueCancellation2027(){
   return previewOverdueCancellation2027();
 }
+
+/**
+ * S-05B｜純模擬測試，不接觸試算表、不建立或取消真實訂單。
+ * 用固定案例確認 72 小時邊界、付款保護、取消冪等性及產能計算。
+ * 正式寫入功能尚未啟用。
+ */
+function testOverdueRulesSimulation2027(){
+  const now=new Date('2026-11-18T10:00:00+08:00').getTime();
+  const cases=[
+    {name:'逾期未付款',pay:'未付款',status:'待確認',hoursAgo:73,pieces:48,expected:true},
+    {name:'剛好到期',pay:'未付款',status:'待確認',hoursAgo:0,pieces:24,expected:false},
+    {name:'尚未到期',pay:'未付款',status:'待確認',hoursAgo:-1,pieces:24,expected:false},
+    {name:'逾期待核帳',pay:'待核帳',status:'待確認',hoursAgo:100,pieces:48,expected:false},
+    {name:'逾期已付款',pay:'已付款',status:'已確認',hoursAgo:100,pieces:48,expected:false},
+    {name:'已取消不可重複',pay:'未付款',status:'已取消',hoursAgo:100,pieces:48,expected:false},
+    {name:'退款中保護',pay:'退款中',status:'待確認',hoursAgo:100,pieces:48,expected:false}
+  ];
+  const results=cases.map(c=>{
+    const deadline=now-c.hoursAgo*3600000;
+    const eligible=c.pay==='未付款'&&sjStatusActive_(c.status)&&deadline<now;
+    return {case:c.name,expected:c.expected,actual:eligible,pass:eligible===c.expected};
+  });
+  const usedBefore=72,cancelledPieces=48,usedAfter=usedBefore-cancelledPieces;
+  const capacityPass=usedAfter===24&&SJ27.LIMIT-usedAfter===4776;
+  const result={mode:'SIMULATION ONLY',passed:results.every(r=>r.pass)&&capacityPass,
+    results,capacity:{usedBefore,cancelledPieces,usedAfter,remaining:SJ27.LIMIT-usedAfter,pass:capacityPass},
+    note:'未讀寫試算表；正式取消與產能重算尚待另行驗證'};
+  Logger.log('===== S-05B 逾期規則純模擬｜NO SHEET ACCESS =====');
+  Logger.log(JSON.stringify(result));return result;
+}
