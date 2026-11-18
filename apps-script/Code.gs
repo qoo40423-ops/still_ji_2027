@@ -739,7 +739,7 @@ function sjOverdueSafeDecision2027_(v,t,now){
   const date=sjDateValue_(v[2]),pieces=Number(v[t.pieces-1]);
   if(!(created instanceof Date)||!Number.isFinite(created.getTime())||
      !(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
-     !/^2027-(08|09)-\\d{2}$/.test(date)||
+     !/^2027-(08|09)-\d{2}$/.test(date)||
      !Number.isSafeInteger(pieces)||pieces<=0||
      deadline.getTime()<created.getTime())
     return {kind:'warning',reason:'成立時間、截止時間、製作日期或顆數異常'};
