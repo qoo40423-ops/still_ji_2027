@@ -157,6 +157,16 @@ body>header .sj-site-links{display:flex!important;align-items:center!important;g
 body>header .sj-site-links a{font-size:14px!important;font-weight:400!important;padding:0!important}
 @media(max-width:700px){body>header>.sj-site-nav{flex-wrap:wrap!important}body>header .sj-site-links{margin-left:0!important;justify-content:flex-start!important;gap:12px!important}}
 </style>
+<style id="product-font-match-home-final">
+/* The homepage uses Noto Serif TC sitewide; match its exact font stack. */
+:root{--sj-font:"Noto Serif TC","Songti TC","PMingLiU",serif!important}
+body>header,body>header nav,body>header a,body>header span,
+body>header .brand,body>header .sj-site-links,body>header .sj-site-links a{
+ font-family:"Noto Serif TC","Songti TC","PMingLiU",serif!important;
+}
+body>header .sj-site-nav .brand{font-weight:750!important;font-size:16px!important;letter-spacing:0!important}
+body>header .sj-site-links a{font-weight:400!important;font-size:14px!important;letter-spacing:normal!important}
+</style>
 </head>
 <body>
 <header><nav class="sj-site-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="sj-site-links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header>
