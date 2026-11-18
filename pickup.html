@@ -46,7 +46,7 @@ $("prevMonth").addEventListener("click",()=>{month=8;calendar();});$("nextMonth"
 ["six","fifteen","pickupNote"].forEach(k=>$(k).addEventListener("input",calc));$("pickupTime").addEventListener("change",calc);updatePickupSlots();calendar();calc();
 
 /* 主管展示版：公開 TEST 收單須完成 GAS 部署、安全驗收後，才可設定 endpoint。 */
-const SJ27_ORDER_ENDPOINT='';
+const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 let sj27RequestId='';
 function sj27DemoSubmit(){
  const btn=document.getElementById('sj27Send'),msg=document.getElementById('sj27SendMsg');
