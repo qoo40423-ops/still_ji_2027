@@ -124,7 +124,7 @@ function mgrNewOrder2027(o){
  values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' '+invoiceNote+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
  }
  if(!sh)throw Error('找不到訂單工作表');if(pieces>4800||mgrUsage_(ss,date)+pieces>4800)throw Error('一般訂單已超過每日 4800 顆上限');
- const row=sh.getLastRow()+1;sh.getRange(row,phoneCol).setNumberFormat('@');sh.getRange(row,1,1,values.length).setValues([values]);sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');sh.getRange(row,deadlineCol).setNumberFormat('yyyy/mm/dd hh:mm');if(paid)sh.getRange(row,o.method==='自取'?16:21).setNumberFormat('yyyy/mm/dd hh:mm');
+ const row=sh.getLastRow()+1;mgrApplyDropdowns2027_(sh,row,o.method);sh.getRange(row,phoneCol).setNumberFormat('@');sh.getRange(row,1,1,values.length).setValues([values]);sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');sh.getRange(row,deadlineCol).setNumberFormat('yyyy/mm/dd hh:mm');if(paid)sh.getRange(row,o.method==='自取'?16:21).setNumberFormat('yyyy/mm/dd hh:mm');
  return {ok:true,orderId:id,amount:o.method==='自取'?values[11]:values[16],pieces,paid};
  }finally{lock.releaseLock();}
 }
@@ -176,4 +176,39 @@ function mgrConfirmPayment2027(kind,orderId){
   SpreadsheetApp.flush();
   return {ok:true,already:false,id};
  }finally{lock.releaseLock();}
+}
+
+/** 從同欄既有的有效下拉選單複製驗證規則；不更動儲存格內容。 */
+function mgrApplyDropdowns2027_(sh,row,method){
+ const columns=method==='自取'?[14,17]:[19,22,24];
+ const last=sh.getLastRow();
+ for(const col of columns){
+  let rule=null;
+  if(last>=2){
+   const rules=sh.getRange(2,col,last-1,1).getDataValidations();
+   for(let i=0;i<rules.length;i++){if(rules[i][0]){rule=rules[i][0];break;}}
+  }
+  if(rule)sh.getRange(row,col).setDataValidation(rule);
+ }
+}
+/** 一次補齊既有 APP 訂單缺少的下拉選單，保留所有資料。 */
+function mgrRepairDropdowns2027(){
+ const ss=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID);
+ const summary={};
+ for(const [name,method,cols] of [['門市自取','自取',[14,17]],['宅配到府','宅配',[19,22,24]]]){
+  const sh=ss.getSheetByName(name);if(!sh)throw Error('找不到工作表：'+name);
+  const last=sh.getLastRow();let fixed=0;
+  if(last>=2){
+   const ids=sh.getRange(2,1,last-1,1).getDisplayValues();
+   const notes=sh.getRange(2,method==='自取'?18:25,last-1,1).getDisplayValues();
+   const rules={};
+   for(const col of cols){const arr=sh.getRange(2,col,last-1,1).getDataValidations();rules[col]=arr.find(v=>v[0])?.[0]||null;}
+   for(let i=0;i<ids.length;i++){
+    if(!String(ids[i][0]).trim()||!String(notes[i][0]).includes('[APP:'))continue;
+    for(const col of cols){const cell=sh.getRange(i+2,col);if(rules[col]&&!cell.getDataValidation()){cell.setDataValidation(rules[col]);fixed++;}}
+   }
+  }
+  summary[name]=fixed;
+ }
+ Logger.log(JSON.stringify(summary));return summary;
 }
