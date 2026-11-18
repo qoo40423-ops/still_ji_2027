@@ -502,7 +502,7 @@ function submitPickupRemittance2027(data){
   const orderId=String(data.orderId||'').trim().toUpperCase();
   const phone=sjPhone_(data.phone);
   const last5=String(data.last5||'').trim();
-  if(!/^(?:SJ-\\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8})$/.test(orderId))throw Error('訂單編號格式不正確');
+  if(!/^(?:SJ-\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8})$/.test(orderId))throw Error('訂單編號格式不正確');
   if(!/^\d{5}$/.test(last5)||last5==='88888')throw Error('請填寫有效的匯款帳號後五碼');
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))throw Error('目前系統忙碌，請稍後再試');
