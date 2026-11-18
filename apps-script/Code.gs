@@ -1026,3 +1026,52 @@ function inspectOverdueSchedulerSafety2027(){
   Logger.log('===== S-10A 重複取消與排程狀態唯讀驗收 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/** S-10B｜每小時逾期取消排程：只允許目前 TEST 試算表。 */
+function overdueHourlyHandler2027(){
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    throw Error('S-10B 非核准 TEST 試算表，拒絕執行');
+  const result=applyOverdueAll2027();
+  Logger.log('===== S-10B 自動逾期檢查結果 =====');
+  Logger.log(JSON.stringify(result));
+  if(result.mode==='ABORT NO WRITE'||!result.passed)
+    throw Error('S-10B 安全檢查未通過，請查看執行紀錄');
+  return result;
+}
+/** S-10B｜唯讀查看逾期排程，不新增或移除。 */
+function inspectOverdueHourlyTrigger2027(){
+  const ts=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='overdueHourlyHandler2027');
+  const result={mode:'READ ONLY',handler:'overdueHourlyHandler2027',
+    installedCount:ts.length,installed:ts.length===1,
+    duplicate:ts.length>1,writePerformed:false};
+  Logger.log('===== S-10B 逾期排程狀態 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+/** S-10B｜需人工執行一次才會安裝，已存在則不重複安裝。 */
+function setupOverdueHourlyTrigger2027(){
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    throw Error('S-10B 非核准 TEST 試算表，拒絕安裝');
+  const existing=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='overdueHourlyHandler2027');
+  if(existing.length){
+    const result={installed:false,existing:existing.length,
+      message:existing.length===1?'排程已存在，未重複安裝':'偵測到重複排程，請人工檢查'};
+    Logger.log(JSON.stringify(result));return result;
+  }
+  const preview=previewOverdueSafety2027();
+  if(preview.warnings.length||preview.candidateCount)
+    throw Error('S-10B 安裝前預覽有警告或取消候選，請先人工檢查');
+  ScriptApp.newTrigger('overdueHourlyHandler2027').timeBased().everyHours(1).create();
+  const result={installed:true,frequency:'每小時',testOnly:true,
+    note:'Apps Script 會在每小時區間內安排執行，並非整點精準執行'};
+  Logger.log('===== S-10B 已安裝 TEST 自動逾期排程 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+/** S-10B｜停止逾期自動檢查，不影響付款編輯觸發器。 */
+function removeOverdueHourlyTrigger2027(){
+  const ts=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='overdueHourlyHandler2027');
+  ts.forEach(t=>ScriptApp.deleteTrigger(t));
+  const result={removed:ts.length,handler:'overdueHourlyHandler2027',
+    paymentEditTriggerUnaffected:true};
+  Logger.log('===== S-10B 已移除 TEST 逾期排程 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
