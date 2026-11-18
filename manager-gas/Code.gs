@@ -16,10 +16,16 @@ function managerSnapshot2027(){
  const add=(target,o)=>{target.boxes6+=o.boxes6;target.boxes15+=o.boxes15;target.pieces+=o.boxes6*6+o.boxes15*15;};
  const finish=x=>{x.pans=Math.ceil(x.pieces/60);return x;};
  const map={};
- const make=date=>map[date]||(map[date]={date,morning:empty(),afternoon:empty(),pickup:empty(),delivery:empty(),slots:{'09:00~12:00':empty(),'13:00~15:00':empty(),'17:00~18:00':empty()},unclassified:empty()});
+ const make=date=>map[date]||(map[date]={date,morning:empty(),afternoon:empty(),pickup:empty(),delivery:empty(),slots:{'09:00~10:00':empty(),'09:00~12:00':empty(),'13:00~15:00':empty(),'15:00~17:00':empty(),'17:00~18:00':empty()},unclassified:empty()});
  const active=o=>!['已取消','取消','作廢'].includes(o.status);
- const slotKey=slot=>{const t=String(slot||'').replace(/\\s/g,'').replace(/[～〜－–—]/g,'~');if(/09[:：]?00|09:00~12:00|上午/.test(t))return '09:00~12:00';if(/13[:：]?00|13:00~15:00/.test(t))return '13:00~15:00';if(/17[:：]?00|17:00~18:00/.test(t))return '17:00~18:00';return '';};
- pickup.filter(active).forEach(o=>{const d=make(o.date);add(d.pickup,o);const key=slotKey(o.slot);if(key){add(d.slots[key],o);add(key==='09:00~12:00'?d.morning:d.afternoon,o);}else add(d.unclassified,o);});
+ const slotKey=slot=>{
+  const t=String(slot||'').replace(/\\s/g,'').replace(/[～〜－–—]/g,'~').replace(/：/g,':');
+  for(const k of ['09:00~10:00','09:00~12:00','13:00~15:00','15:00~17:00','17:00~18:00'])if(t.includes(k))return k;
+  if(t==='上午')return '09:00~12:00';
+  return '';
+ };
+
+ pickup.filter(active).forEach(o=>{const d=make(o.date);add(d.pickup,o);const key=slotKey(o.slot);if(key){add(d.slots[key],o);add(key.startsWith('09:')?d.morning:d.afternoon,o);}else add(d.unclassified,o);});
  delivery.filter(active).forEach(o=>{const d=make(o.date);add(d.delivery,o);add(d.morning,o);});
  const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(d=>{Object.values(d.slots).forEach(finish);['morning','afternoon','pickup','delivery','unclassified'].forEach(k=>finish(d[k]));const total=d.pickup.pieces+d.delivery.pieces;return {...d,total,pans:Math.ceil(total/60),remaining:Math.max(0,4800-total),limit:4800};});
  return {generatedAt:stamp(new Date()),pickup,delivery,capacity,counts:{pickup:pickup.length,delivery:delivery.length,pendingReview:pickup.concat(delivery).filter(o=>o.payment==='待核帳').length,unpaid:pickup.concat(delivery).filter(o=>o.payment==='未付款'&&!['已取消','取消','作廢'].includes(o.status)).length}};
