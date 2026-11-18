@@ -55,7 +55,7 @@ button.collect,.entry .action{background:#794557;border-radius:10px;min-height:4
  #message{display:block;margin:10px 0 0}
 }
 @media(max-width:390px){.entry .twocol{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat strong{font-size:22px}}
-.pickup-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:12px;align-items:end;background:#fff;border:1px solid #ebe6df;border-radius:14px;padding:15px 18px;margin-bottom:14px}.pickup-tools label{font-size:12px;font-weight:700;color:#76645f}.pickup-tools select{margin:6px 0 0}.pickup-tools .check{display:flex;gap:8px;align-items:center;white-space:nowrap;padding-bottom:12px;font-size:13px}.pickup-tools input[type=checkbox]{width:17px;height:17px;margin:0;accent-color:#794557}.pickup-summary{font-size:13px;color:#786d68;margin:3px 0 13px}@media(max-width:650px){.pickup-tools{grid-template-columns:1fr}.pickup-tools .check{padding-bottom:0}}.delivery-tools{background:#fff;border:1px solid #ebe6df;border-radius:14px;padding:17px 19px;margin:0 0 14px;max-width:100%}.delivery-tools label{display:block;font-size:12px;font-weight:700;color:#76645f}.delivery-tools select{max-width:340px;margin:7px 0 0}.delivery-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.delivery-summary .stat{margin:0}.delivery-summary .stat strong{font-size:28px}.delivery-caption{margin:12px 2px;color:#867a73;font-size:12px}@media(max-width:580px){.delivery-summary{grid-template-columns:1fr 1fr}.delivery-summary .stat:last-child{grid-column:1/-1}}</style></head><body>
+.pickup-tools{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:12px;align-items:end;background:#fff;border:1px solid #ebe6df;border-radius:14px;padding:15px 18px;margin-bottom:14px}.pickup-tools label{font-size:12px;font-weight:700;color:#76645f}.pickup-tools select{margin:6px 0 0}.pickup-tools .check{display:flex;gap:8px;align-items:center;white-space:nowrap;padding-bottom:12px;font-size:13px}.pickup-tools input[type=checkbox]{width:17px;height:17px;margin:0;accent-color:#794557}.pickup-summary{font-size:13px;color:#786d68;margin:3px 0 13px}@media(max-width:650px){.pickup-tools{grid-template-columns:1fr}.pickup-tools .check{padding-bottom:0}}.delivery-tools{background:#fff;border:1px solid #ebe6df;border-radius:14px;padding:17px 19px;margin:0 0 14px;max-width:100%}.delivery-tools label{display:block;font-size:12px;font-weight:700;color:#76645f}.delivery-tools select{max-width:340px;margin:7px 0 0}.delivery-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.delivery-summary .stat{margin:0}.delivery-summary .stat strong{font-size:28px}.delivery-caption{margin:12px 2px;color:#867a73;font-size:12px}@media(max-width:580px){.delivery-summary{grid-template-columns:1fr 1fr}.delivery-summary .stat:last-child{grid-column:1/-1}}.pickup-accounting{background:#fff;border:1px solid #e9e2dc;border-radius:14px;padding:16px 20px;margin:0 0 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.pickup-accounting span{font-size:13px;color:#776b65}.pickup-accounting strong{font-size:25px;color:#794557}.pickup-order-line{padding:2px 0;font-size:14px}.pickup-order-line b{font-weight:650;color:#54443f}.pickup-order-card .line{margin-bottom:8px}.pickup-order-card .muted{margin-bottom:8px}@media(max-width:580px){.pickup-accounting{align-items:flex-start;flex-direction:column;gap:4px}.pickup-accounting strong{font-size:23px}}</style></head><body>
 <header><h1>紀家烘焙坊｜訂單管理</h1><div class="muted">116 年中秋｜內部訂單管理</div></header>
 <main><button class="reload" onclick="load()">重新整理資料</button><p id="message">正在載入訂單…</p><section class="stats" id="stats"></section>
 <div class="tabs"><button data-tab="new" onclick="switchTab('new')">新增訂單</button><button data-tab="delivery" onclick="switchTab('delivery')">宅配到府</button><button class="active" data-tab="pickup" onclick="switchTab('pickup')">門市自取</button><button data-tab="capacity" onclick="switchTab('capacity')">每日產能</button><button data-tab="chef" onclick="switchTab('chef')">師傅專區</button><button data-tab="vip" onclick="switchTab('vip')">老闆 VIP</button></div>
@@ -76,8 +76,34 @@ if(tab==='vip'){renderVip();return}
 if(tab==='chef'){renderChef();return}
 if(tab==='delivery'){renderDeliverySummary();return}
 
-const q=$('search').value.trim().toLowerCase(),f=$('filter').value;const pickupDay=$('pickupDate').value,showFinished=$('showFinishedPickup').checked;const list=data[tab].filter(o=>(f==='all'||o.payment===f)&&(!q||[o.id,o.name,o.phone].some(v=>String(v).toLowerCase().includes(q)))&&(tab!=='pickup'||((pickupDay==='all'||o.date===pickupDay)&&(showFinished||!['已取貨','已取消','取消','作廢'].includes(o.status)))));if(tab==='pickup'){$('pickupSummary').textContent=(pickupDay==='all'?'所有日期':pickupDay.replace(/-/g,'/')+' 取貨')+'｜'+(showFinished?'符合條件':'尚未取貨')+' '+list.length+' 筆';}
-$('results').innerHTML=list.length?list.map(o=>'<article class="card"><div class="line"><strong>'+esc(o.name)+'</strong><span class="pill">'+esc(o.payment)+'</span></div><div class="muted">'+esc(o.id)+'</div><div>'+esc(o.date)+' · '+esc(o.slot)+'</div><div>'+esc(o.quantity)+'</div><div>顆數：'+esc(o.pieces)+' · 金額：NT$ '+esc(o.amount)+'</div><div>電話：'+esc(o.phone)+'</div>'+(o.address?'<div>地址：'+esc(o.address)+'</div>':'')+'<div>訂單：'+esc(o.status)+' · 匯款末五碼：'+esc(o.remittance||'—')+'</div>'+(o.tracking?'<div>黑貓單號：'+esc(o.tracking)+'</div>':'')+(o.slipConfirmation?'<div>宅配單確認：'+esc(o.slipConfirmation)+'</div>':'')+(['pickup','delivery'].includes(tab)&&['未付款','待核帳','逾期未付'].includes(o.payment)&&!['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(o.status)?'<button class="collect" onclick="confirmPayment('+JSON.stringify(tab).replace(/"/g,'&quot;')+','+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已收款</button>':'')+ (tab==='pickup'&&o.payment==='已付款'&&['已確認','製作中'].includes(o.status)?'<button class="collect" onclick="collect('+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已取貨</button>':'')+'</article>').join(''):'沒有符合條件的訂單'}
+const q=$('search').value.trim().toLowerCase(),f=$('filter').value;const pickupDay=$('pickupDate').value,showFinished=$('showFinishedPickup').checked;
+const list=data[tab].filter(o=>(f==='all'||o.payment===f)&&(!q||[o.id,o.name,o.phone].some(v=>String(v).toLowerCase().includes(q)))&&(tab!=='pickup'||((pickupDay==='all'||o.date===pickupDay)&&(showFinished||!['已取貨','已取消','取消','作廢'].includes(o.status)))));
+if(tab==='pickup'){
+ const eligible=data.pickup.filter(o=>(pickupDay==='all'||o.date===pickupDay)&&o.payment==='已付款'&&!['已取消','取消','作廢','已退款'].includes(o.status));
+ const paidTotal=eligible.reduce((sum,o)=>sum+(Number(o.amount)||0),0);
+ $('pickupSummary').textContent=(pickupDay==='all'?'所有日期':pickupDay.replace(/-/g,'/')+' 取貨')+'｜'+(showFinished?'符合條件':'尚未取貨')+' '+list.length+' 筆';
+ const totalHtml='<div class="pickup-accounting"><span>已付款訂單總金額（含已取貨）</span><strong>NT$ '+paidTotal.toLocaleString('zh-TW')+'</strong></div>';
+ const cards=list.map(o=>{
+  const products=[Number(o.boxes6)>0?'6入 × '+Number(o.boxes6)+'盒':'',Number(o.boxes15)>0?'15入 × '+Number(o.boxes15)+'盒':''].filter(Boolean).join('、')||'—';
+  const shortDate=String(o.date||'').slice(5).replace('-','/');
+  const line=(label,value)=>'<div class="pickup-order-line"><b>'+label+'：</b>'+esc(value)+'</div>';
+  const canPay=['未付款','待核帳','逾期未付'].includes(o.payment)&&!['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(o.status);
+  const canCollect=o.payment==='已付款'&&['已確認','製作中'].includes(o.status);
+  return '<article class="card pickup-order-card"><div class="line"><strong>'+esc(o.name)+'</strong><span class="pill">'+esc(o.payment)+'</span></div><div class="muted">'+esc(o.id)+'</div>'
+   +line('日期',shortDate+'　取貨時段：'+o.slot)
+   +line('訂單內容',products)
+   +line('金額','NT$ '+Number(o.amount||0).toLocaleString('zh-TW'))
+   +line('手機',o.phone)
+   +line('訂單狀態',o.status+'　/　匯款後五碼：'+(o.remittance||'—'))
+   +(canPay?'<button class="collect" onclick="confirmPayment(\'pickup\','+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已收款</button>':'')
+   +(canCollect?'<button class="collect" onclick="collect('+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已取貨</button>':'')
+   +'</article>';
+ }).join('');
+ $('results').innerHTML=totalHtml+(cards||'<p class="muted">此日期沒有符合條件的待取貨訂單。</p>');
+ return;
+}
+$('results').innerHTML='沒有符合條件的訂單';
+}
 
 
 let draftKind='自取',newBusy=false,vipBusy=false,newRequest='',vipRequest='';
