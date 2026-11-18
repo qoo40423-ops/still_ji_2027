@@ -182,29 +182,6 @@ function testCreateDelivery2027(){
  * 不取消訂單、不改付款狀態、不寄 LINE、不釋放產能。
  * 待核帳、已付款、退款中等情況全部交由人工複核。
  */
-function paymentAudit2027(){
-  const now=new Date(),report={checkedAt:Utilities.formatDate(now,SJ27.TZ,'yyyy/MM/dd HH:mm'),summary:{orders:0,overdueUnpaid:0,manualReview:0,paid:0,invalidDeadline:0},overdue:[],review:[]};
-  for(const spec of [{name:SJ27.PICKUP,deadline:12,payment:13,status:16},{name:SJ27.DELIVERY,deadline:17,payment:18,status:23}]){
-    const sh=sjSheet_(spec.name);
-    const rows=sjDataRows_(spec.name);
-    rows.forEach((r,i)=>{
-      const id=String(r[0]||'').trim(),payment=String(r[spec.payment]||'').trim(),status=String(r[spec.status]||'').trim();
-      const raw=r[spec.deadline],deadline=raw instanceof Date?raw:new Date(raw);
-      report.summary.orders++;
-      if(!Number.isFinite(deadline.getTime())){report.summary.invalidDeadline++;report.review.push({sheet:spec.name,orderId:id,reason:'付款截止時間無效'});return;}
-      if(['已付款','已退款'].includes(payment)){report.summary.paid++;return;}
-      if(!sjStatusActive_(status))return;
-      if(now<=deadline)return;
-      const item={sheet:spec.name,row:i+2,orderId:id,paymentStatus:payment,orderStatus:status,deadline:Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm')};
-      if(payment==='未付款'&&status==='待付款'){report.summary.overdueUnpaid++;report.overdue.push(item);}
-      else{report.summary.manualReview++;report.review.push({...item,reason:'逾期但付款或訂單狀態需人工確認'});}
-    });
-  }
-  Logger.log(JSON.stringify(report));return report;
-}
-/** 只執行唯讀付款稽核，測試階段請先使用這個。 */
-function testPaymentAudit2027(){return paymentAudit2027();}
-
 /**
  * S-02｜付款管理安全稽核（READ ONLY）。
  * 只列出逾期候選與待核帳訂單；不更改任何欄位、不取消訂單。
@@ -234,3 +211,66 @@ function paymentAudit2027(){
 }
 /** S-02：第一次先執行此函式，完全不寫入試算表。 */
 function testPaymentAudit2027(){return paymentAudit2027();}
+
+/**
+ * S-03｜同一張訂單表付款連動（預覽模式）。
+ * 僅讀取：當付款狀態為「已付款」時，建議補上核帳日期；
+ * 自取訂單狀態「待付款／待確認」改「已確認」；
+ * 宅配訂單狀態「待付款／待確認」改「待出貨」。
+ * 不改已取消或已進入其他流程的訂單，不操作黑貓單號。
+ * 注意：核帳日期代表程式確認時間，不代表銀行實際入帳時間。
+ */
+function previewPaymentSync2027(){
+  const result={mode:'READ ONLY',changes:[],warnings:[]};
+  for(const spec of [
+    {name:SJ27.PICKUP,pay:14,verified:16,status:17,target:'已確認'},
+    {name:SJ27.DELIVERY,pay:19,verified:21,status:24,target:'待出貨'}
+  ]){
+    const sh=sjSheet_(spec.name),last=sh.getLastRow();
+    if(last<2)continue;
+    const rows=sh.getRange(2,1,last-1,spec.status).getValues();
+    rows.forEach((r,i)=>{
+      const orderId=String(r[0]||'').trim();
+      if(!orderId||String(r[spec.pay-1]||'').trim()!=='已付款')return;
+      const status=String(r[spec.status-1]||'').trim();
+      if(!sjStatusActive_(status)){result.warnings.push({orderId,reason:'訂單已取消，不自動恢復'});return;}
+      const updates=[];
+      if(!r[spec.verified-1])updates.push({column:spec.verified,value:'NOW'});
+      if(['待付款','待確認'].includes(status))updates.push({column:spec.status,value:spec.target});
+      if(updates.length)result.changes.push({sheet:spec.name,row:i+2,orderId,updates});
+    });
+  }
+  Logger.log('===== S-03 付款連動預覽｜READ ONLY =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+function testPreviewPaymentSync2027(){return previewPaymentSync2027();}
+
+/**
+ * S-03｜手動確認後才執行寫入。
+ * 再次核對付款狀態與訂單編號，避免預覽後狀態變動誤寫。
+ * 不處理逾期取消，也不改動宅配單確認及黑貓單號。
+ */
+function applyPaymentSync2027(){
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('系統忙碌，請稍後重試');
+  try{
+    const plan=previewPaymentSync2027(),done=[],skipped=[];
+    for(const item of plan.changes){
+      const sh=sjSheet_(item.sheet),isPickup=item.sheet===SJ27.PICKUP;
+      const payCol=isPickup?14:19,statusCol=isPickup?17:24,verifiedCol=isPickup?16:21;
+      const id=String(sh.getRange(item.row,1).getValue()||'').trim();
+      const pay=String(sh.getRange(item.row,payCol).getValue()||'').trim();
+      const status=String(sh.getRange(item.row,statusCol).getValue()||'').trim();
+      if(id!==item.orderId||pay!=='已付款'||!sjStatusActive_(status)){skipped.push(item.orderId);continue;}
+      if(!sh.getRange(item.row,verifiedCol).getValue()){
+        sh.getRange(item.row,verifiedCol).setValue(new Date()).setNumberFormat('yyyy/mm/dd hh:mm');
+      }
+      if(['待付款','待確認'].includes(status)){
+        sh.getRange(item.row,statusCol).setValue(isPickup?'已確認':'待出貨');
+      }
+      done.push(item.orderId);
+    }
+    const result={mode:'WRITE',updated:done,skipped};
+    Logger.log(JSON.stringify(result));return result;
+  }finally{lock.releaseLock();}
+}
