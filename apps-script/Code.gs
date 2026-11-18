@@ -798,3 +798,36 @@ function applyOverdueAll2027(){
     return result;
   }finally{lock.releaseLock();}
 }
+
+/**
+ * S-07A｜建立唯一專用逾期測試單，供通用 applyOverdueAll2027 驗證。
+ * 只建立一筆 48 顆門市自取測試單；不執行取消、不安裝排程。
+ * RID 去重：若已建立，絕不再次修改其截止時間。
+ */
+function setupGenericOverdueTest2027(){
+  const rid='TEST-S07A-GENERIC-2027-0001';
+  const existing=sjDuplicate_(rid);
+  if(existing){
+    const result={mode:'SETUP NO WRITE',existing:true,orderId:existing.orderId};
+    Logger.log('===== S-07A 測試單已存在 =====');
+    Logger.log(JSON.stringify(result));return result;
+  }
+  const created=createOrder2027({
+    method:'自取',name:'S07A通用取消測試',phone:'0912345678',
+    date:'2027-09-07',pickupTime:'13:00–15:00',
+    sixBoxes:8,fifteenBoxes:0,
+    notes:'S07A 專用通用逾期取消測試',requestId:rid
+  });
+  const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+  const ids=sh.getRange(2,1,last-1,1).getDisplayValues();
+  const idx=ids.findIndex(x=>x[0]===created.orderId);
+  if(idx<0)throw Error('建立後找不到測試單，請停止');
+  const row=idx+2;
+  sh.getRange(row,13).setValue(new Date(Date.now()-24*3600000))
+    .setNumberFormat('yyyy/mm/dd hh:mm');
+  const result={mode:'SETUP WRITE TEST ONLY',orderId:created.orderId,
+    sheet:SJ27.PICKUP,row,date:'2027-09-07',pieces:48,
+    deadline:'昨天（僅此測試單）',note:'尚未取消；下一步先 READ ONLY 預覽'};
+  Logger.log('===== S-07A 建立通用逾期專用測試單 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
