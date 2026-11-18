@@ -2,7 +2,7 @@
  * 紀家烘焙坊｜116 年中秋訂單後端（目前仍連接 TEST 試算表）
  * 保留訂單建立、付款連動、逾期保護、產能統計及觸發器。
  * 已移除一次性測試／模擬函式；歷史完整版本見 archive。
- * 不含 doPost / doGet；目前不對外接單。
+ * S-11D 新增自取匯款回報 doPost；尚未部署或啟用前端送出。
  */
 
 const SJ27 = Object.freeze({
@@ -602,5 +602,56 @@ function testPickupRemittanceWrite2027(){
     addedTestOrder:true,writePerformed:true,
     note:'已新增一筆 TEST 自取訂單，保留供後續核帳測試；不會自動刪除'};
   Logger.log('===== S-11C 自取匯款回報實際寫入測試 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+
+
+/**
+ * S-11D｜僅限自取匯款回報的 Web App 入口（TEST）。
+ * HTML form POST 跳轉至 Apps Script 回應頁，不使用跨網域 fetch。
+ * 以 CacheService 對同一訂單、電話及全站請求限流；不回傳個資。
+ * 注意：Apps Script 公開 Web App 無法可靠取得訪客 IP，這是基本限流，
+ * 上線前仍須驗證防濫用方案與部署權限。
+ */
+function doPost(e){
+  const p=e&&e.parameter||{};
+  const respond=(message,success)=>HtmlService.createHtmlOutput(
+    '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<title>自取匯款回報結果｜紀家烘焙坊</title></head>'+
+    '<body style="font-family:serif;background:#faf6f0;color:#49352b;text-align:center;padding:50px 18px">'+
+    '<main style="max-width:520px;margin:auto;background:#fffdfa;border:1px solid #e8dbcf;border-radius:16px;padding:28px">'+
+    '<h2 style="color:#803d50">'+(success?'匯款回報已收到':'匯款回報未完成')+'</h2><p>'+
+    message+'</p><p>您可以關閉此頁，返回紀家烘焙坊網站。</p></main></body></html>');
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    return respond('目前無法受理，請聯繫店家。',false);
+  if(String(p.action||'')!=='pickup-remittance'||String(p.website||'')!=='stillji2027')
+    return respond('請由紀家烘焙坊自取匯款回報頁面送出。',false);
+  if(String(p.company||'').trim())return respond('無法完成回報，請稍後再試。',false);
+  const id=String(p.orderId||'').trim().toUpperCase(),phone=String(p.phone||'').trim();
+  if(id.length>32||phone.length>30||String(p.last5||'').length>8)
+    return respond('資料格式不正確，請返回檢查。',false);
+  const cache=CacheService.getScriptCache();
+  const key='sj27-remit-'+Utilities.base64EncodeWebSafe(
+    Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,id+'|'+phone)).slice(0,36);
+  const attempts=Number(cache.get(key)||0);
+  if(attempts>=5)return respond('嘗試次數過多，請稍後再試或聯繫店家。',false);
+  cache.put(key,String(attempts+1),3600);
+  try{
+    const result=submitPickupRemittance2027({orderId:id,phone,last5:p.last5});
+    return respond(result.message,true);
+  }catch(err){
+    Logger.log(JSON.stringify({event:'PICKUP_REMITTANCE_REJECTED',reason:String(err.message||err).slice(0,120)}));
+    return respond('無法完成回報，請確認訂單資料及付款期限，或聯繫店家。',false);
+  }
+}
+/** S-11D｜不發送請求的唯讀檢查。 */
+function inspectPickupWebEndpoint2027(){
+  const checks={testSpreadsheet:SJ27.SPREADSHEET_ID==='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4',
+    postHandler:typeof doPost==='function',getHandlerNotEnabled:typeof doGet==='undefined',
+    pickupOnly:doPost.toString().includes('pickup-remittance'),
+    remittanceCore:typeof submitPickupRemittance2027==='function'};
+  const result={mode:'READ ONLY S-11D',checks,passed:Object.values(checks).every(Boolean),
+    writePerformed:false,note:'此檢查不代表 Web App 已部署或公開安全審查完成'};
   Logger.log(JSON.stringify(result));return result;
 }
