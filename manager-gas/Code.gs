@@ -16,3 +16,30 @@ function managerSnapshot2027(){
  const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(x=>({...x,total:x.pickup+x.delivery,pans:Math.ceil((x.pickup+x.delivery)/60),remaining:Math.max(0,4800-x.pickup-x.delivery),limit:4800}));
  return {generatedAt:stamp(new Date()),pickup,delivery,capacity,counts:{pickup:pickup.length,delivery:delivery.length,pendingReview:pickup.concat(delivery).filter(o=>o.payment==='待核帳').length,unpaid:pickup.concat(delivery).filter(o=>o.payment==='未付款'&&!['已取消','取消','作廢'].includes(o.status)).length}};
 }
+
+
+/** 僅允許已核帳的自取訂單標記已取貨；操作僅更新 Q 欄。 */
+function markPickupCollected2027(orderId){
+ const id=String(orderId||'').trim();
+ if(!/^SJ27-[A-Z0-9-]{8,30}$/.test(id))throw Error('訂單編號格式不正確');
+ const lock=LockService.getScriptLock();
+ if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後重試');
+ try{
+  const sh=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID).getSheetByName('門市自取');
+  if(!sh)throw Error('找不到門市自取工作表');
+  const last=sh.getLastRow();
+  if(last<2)throw Error('找不到訂單');
+  const ids=sh.getRange(2,1,last-1,1).getDisplayValues().map(r=>r[0].trim());
+  const matches=ids.map((x,i)=>x===id?i+2:0).filter(Boolean);
+  if(matches.length!==1)throw Error(matches.length?'訂單編號重複，請人工檢查':'找不到訂單');
+  const row=matches[0];
+  const pay=String(sh.getRange(row,14).getDisplayValue()).trim();
+  const current=String(sh.getRange(row,17).getDisplayValue()).trim();
+  if(current==='已取貨')return {ok:true,already:true,id,status:'已取貨'};
+  if(pay!=='已付款')throw Error('此訂單尚未完成核帳，不能標記已取貨');
+  if(!['已確認','製作中'].includes(current))throw Error('目前訂單狀態「'+current+'」不允許標記已取貨');
+  sh.getRange(row,17).setValue('已取貨');
+  SpreadsheetApp.flush();
+  return {ok:true,already:false,id,status:'已取貨'};
+ }finally{lock.releaseLock();}
+}
