@@ -39,7 +39,7 @@ function renderChef(){
  const [y,m]=chefMonth.split('-').map(Number),offset=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate();
  const available=new Set(data.capacity.map(d=>d.date));
  let cells=['日','一','二','三','四','五','六'].map(w=>'<span class="dow">'+w+'</span>').join('')+'<span class="blank"></span>'.repeat(offset);
- for(let i=1;i<=count;i++){const key=chefMonth+'-'+String(i).padStart(2,'0');cells+='<button class="'+(available.has(key)?'has ':'')+(chefDay===key?'selected':'')+'" onclick="chefChoose(\\''+key+'\\')">'+i+'</button>'}
+ for(let i=1;i<=count;i++){const key=chefMonth+'-'+String(i).padStart(2,'0');cells+='<button class="'+(available.has(key)?'has ':'')+(chefDay===key?'selected':'')+'" onclick="chefChoose(\''+key+'\')">'+i+'</button>'}
  let html='<div class="calendar"><div class="calendar-head"><button onclick="chefMoveMonth(-1)">‹</button><strong>'+y+' 年 '+m+' 月</strong><button onclick="chefMoveMonth(1)">›</button></div><div class="calendar-grid">'+cells+'</div></div>';
  html+='<h3>選取日期｜製作盤數</h3>'+chefCard(chefDay,false);
  html+='<div class="line" style="align-items:center;margin:18px 0 8px"><h3 style="margin:0">未來七日</h3><button class="reload" onclick="chefDay=chefKey(new Date());chefMonth=chefDay.slice(0,7);renderChef()">回到今天</button></div>';
