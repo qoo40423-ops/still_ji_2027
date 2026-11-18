@@ -274,3 +274,56 @@ function applyPaymentSync2027(){
     Logger.log(JSON.stringify(result));return result;
   }finally{lock.releaseLock();}
 }
+
+/**
+ * S-04｜安裝型編輯觸發器：只有人工把付款欄改為「已付款」才同步該列。
+ * 安裝型觸發器須由具有試算表權限的管理者執行 setupPaymentEditTrigger2027 一次。
+ * 不使用簡易 onEdit（跨檔 openById 權限可能不足）。
+ */
+function paymentEditHandler2027(e){
+  if(!e||!e.range||!e.source)return;
+  if(e.source.getId()!==SJ27.SPREADSHEET_ID)return;
+  const sh=e.range.getSheet(),name=sh.getName();
+  const isPickup=name===SJ27.PICKUP;
+  if(!isPickup&&name!==SJ27.DELIVERY)return;
+  const paymentCol=isPickup?14:19,statusCol=isPickup?17:24,verifiedCol=isPickup?16:21;
+  // 只處理單一儲存格的人工修改；大量貼上須人工核對後使用 S-03 同步。
+  if(e.range.getNumRows()!==1||e.range.getNumColumns()!==1||
+     e.range.getRow()<2||e.range.getColumn()!==paymentCol)return;
+  if(String(e.value||'').trim()!=='已付款')return;
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('付款連動鎖定逾時，請使用 applyPaymentSync2027 補同步');
+  try{
+    // 重新讀取即時值，避免編輯後被其他人更改。
+    const row=e.range.getRow(),orderId=String(sh.getRange(row,1).getValue()||'').trim();
+    const pay=String(sh.getRange(row,paymentCol).getValue()||'').trim();
+    const status=String(sh.getRange(row,statusCol).getValue()||'').trim();
+    if(!orderId||pay!=='已付款'||!sjStatusActive_(status))return;
+    // 已有核帳日期則不覆寫；日期是人工確認時間，不是銀行交易時間。
+    const verified=sh.getRange(row,verifiedCol);
+    if(!verified.getValue())verified.setValue(new Date()).setNumberFormat('yyyy/mm/dd hh:mm');
+    if(['待付款','待確認'].includes(status))
+      sh.getRange(row,statusCol).setValue(isPickup?'已確認':'待出貨');
+    Logger.log(JSON.stringify({event:'PAYMENT_SYNC',sheet:name,row,orderId,statusBefore:status}));
+  }finally{lock.releaseLock();}
+}
+
+/** 只需執行一次；重複執行會保留既有觸發器，不會重複安裝。 */
+function setupPaymentEditTrigger2027(){
+  const name='paymentEditHandler2027';
+  const existing=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===name);
+  if(existing.length){
+    const result={installed:false,existing:existing.length,message:'已存在付款編輯觸發器，未重複安裝'};
+    Logger.log(JSON.stringify(result));return result;
+  }
+  ScriptApp.newTrigger(name).forSpreadsheet(SJ27.SPREADSHEET_ID).onEdit().create();
+  const result={installed:true,message:'S-04 付款編輯觸發器已安裝（TEST）'};
+  Logger.log(JSON.stringify(result));return result;
+}
+
+/** 若需暫停自動連動，執行此函式移除本功能的觸發器。 */
+function removePaymentEditTrigger2027(){
+  const triggers=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='paymentEditHandler2027');
+  triggers.forEach(t=>ScriptApp.deleteTrigger(t));
+  Logger.log(JSON.stringify({removed:triggers.length}));
+}
