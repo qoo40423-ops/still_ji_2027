@@ -873,3 +873,39 @@ function setupGenericOverdueTest2027(){
   Logger.log('===== S-07A 建立通用逾期專用測試單 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/** S-08B｜真實 TEST 資料安全預覽，完全唯讀，使用與正式取消相同的判斷函式。 */
+function previewOverdueSafety2027(){
+  const specs=[
+    {name:SJ27.PICKUP,pay:14,status:17,deadline:13,remit:15,pieces:9,width:18},
+    {name:SJ27.DELIVERY,pay:19,status:24,deadline:18,remit:20,pieces:12,width:25}
+  ];
+  const now=Date.now(),candidates=[],warnings=[],protectedByReason={},scanned={};
+  const allIds=[],releaseByDate={};
+  for(const t of specs){
+    const sh=sjSheet_(t.name),last=sh.getLastRow();
+    const rows=last<2?[]:sh.getRange(2,1,last-1,t.width).getValues();
+    scanned[t.name]=0;
+    rows.forEach((v,i)=>{
+      const id=String(v[0]||'').trim();
+      if(!id)return;
+      scanned[t.name]++;allIds.push(id);
+      const d=sjOverdueSafeDecision2027_(v,t,now);
+      if(d.kind==='warning')warnings.push({sheet:t.name,row:i+2,id,reason:d.reason});
+      else if(d.kind==='protected')protectedByReason[d.reason]=(protectedByReason[d.reason]||0)+1;
+      else if(d.kind==='candidate'){
+        candidates.push({sheet:t.name,row:i+2,id,date:d.date,pieces:d.pieces});
+        releaseByDate[d.date]=(releaseByDate[d.date]||0)+d.pieces;
+      }
+    });
+  }
+  if(new Set(allIds).size!==allIds.length)
+    warnings.push({reason:'跨表或同表訂單編號重複'});
+  const result={mode:'READ ONLY S-08B',checkedAt:Utilities.formatDate(new Date(),SJ27.TZ,'yyyy/MM/dd HH:mm:ss'),
+    scanned,candidateCount:candidates.length,candidates,protectedByReason,
+    warnings,releaseByDate,writePerformed:false,
+    safeToApply:warnings.length===0,
+    note:'這是預覽；safeToApply 不代表已完成所有正式上線測試'};
+  Logger.log('===== S-08B 真實 TEST 訂單安全預覽｜READ ONLY =====');
+  Logger.log(JSON.stringify(result));return result;
+}
