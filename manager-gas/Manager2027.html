@@ -6,7 +6,7 @@
 <div id="searchBox"><input id="search" placeholder="搜尋訂單編號、姓名或電話" oninput="render()"><select id="filter" onchange="render()"><option value="all">全部付款狀態</option><option value="待核帳">待核帳</option><option value="未付款">未付款</option><option value="已付款">已付款</option><option value="逾期未付">逾期未付</option></select></div>
 <div id="calendarWrap" class="hide"><div class="calendar"><div class="calendar-head"><button onclick="moveMonth(-1)">‹</button><strong id="monthLabel"></strong><button onclick="moveMonth(1)">›</button></div><div id="calendarGrid" class="calendar-grid"></div></div></div><section id="results"></section><p class="muted">可在自取訂單點選「確認已取貨」。宅配訂單請至試算表管理；宅配製作量仍計入每日產能。</p></main>
 <script>
-let data=null,tab='pickup',selectedDay='',viewMonth='';const $=id=>document.getElementById(id);
+let data=null,tab='pickup',selectedDay='',viewMonth='',chefDay='',chefMonth='';const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function switchTab(t){tab=t;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));$('searchBox').classList.toggle('hide',t==='capacity');$('calendarWrap').classList.toggle('hide',t!=='capacity');render()}
 function load(){ $('message').textContent='讀取中…';google.script.run.withSuccessHandler(d=>{data=d;$('message').textContent='更新時間：'+d.generatedAt;render()}).withFailureHandler(e=>{$('message').textContent='讀取失敗：'+e.message}).managerSnapshot2027()}
@@ -21,22 +21,29 @@ function moveMonth(delta){const [y,m]=viewMonth.split('-').map(Number);const d=n
 function chooseDay(d){selectedDay=d;renderCalendar()}
 function fmt(x){return '15入 × '+x.boxes15+' 盒；6入 × '+x.boxes6+' 盒；合計 '+x.pans+' 盤'}
 function weekday(date){const [y,m,d]=date.split('-').map(Number);return '日一二三四五六'[new Date(y,m-1,d).getDay()]}
+function chefKey(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function chefChoose(key){chefDay=key;renderChef()}
+function chefMoveMonth(n){const [y,m]=chefMonth.split('-').map(Number);const dt=new Date(y,m-1+n,1);chefMonth=chefKey(dt).slice(0,7);renderChef()}
+function chefCard(key,compact){
+ const x=data.capacity.find(d=>d.date===key),am=x?x.morning.pans:0,pm=x?x.afternoon.pans:0,total=am+pm;
+ const label=key.slice(5).replace('-','/')+'（'+weekday(key)+'）';
+ return '<div class="chefday"><div class="chefhead"><span>'+label+'</span><span class="cheftotal">'+total+' 盤</span></div>'+
+ '<div class="chefgrid"><div class="chefshift"><span>上午</span><strong>'+am+' 盤</strong></div><div class="chefshift"><span>下午</span><strong>'+pm+' 盤</strong></div></div>'+
+ (x&&x.unclassified.pieces?'<div class="chefnotice">有未分類自取時段，請管理人員檢查；盤數尚未包含該部分。</div>':'')+
+ (x&&x.total>4800?'<div class="chefnotice">已超過每日 80 盤產能上限</div>':'')+'</div>';
+}
 function renderChef(){
- const now=new Date();
- const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
- const byDate=new Map(data.capacity.map(x=>[x.date,x]));
- let html='<div class="detail"><h3>未來七日製作表</h3><div class="muted">今日起連續 7 天｜宅配計入上午｜只顯示盤數</div></div>';
- for(let i=0;i<7;i++){
-  const dt=new Date(today);dt.setDate(today.getDate()+i);
-  const key=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  const x=byDate.get(key),am=x?x.morning.pans:0,pm=x?x.afternoon.pans:0;
-  const total=am+pm;
-  const label=String(dt.getMonth()+1).padStart(2,'0')+'/'+String(dt.getDate()).padStart(2,'0')+'（'+weekday(key)+'）'+(i===0?' 今天':'');
-  html+='<div class="chefday"><div class="chefhead"><span>'+label+'</span><span class="cheftotal">'+total+' 盤</span></div>'+
-   '<div class="chefgrid"><div class="chefshift"><span>上午</span><strong>'+am+' 盤</strong></div><div class="chefshift"><span>下午</span><strong>'+pm+' 盤</strong></div></div>'+
-   (x&&x.unclassified.pieces?'<div class="chefnotice">有未分類自取時段，請管理人員檢查；此處盤數尚未包含該部分。</div>':'')+
-   (x&&x.total>4800?'<div class="chefnotice">已超過每日產能上限</div>':'')+'</div>';
- }
+ const today=new Date(),todayKey=chefKey(today);
+ if(!chefDay)chefDay=todayKey;
+ if(!chefMonth)chefMonth=chefDay.slice(0,7);
+ const [y,m]=chefMonth.split('-').map(Number),offset=new Date(y,m-1,1).getDay(),count=new Date(y,m,0).getDate();
+ const available=new Set(data.capacity.map(d=>d.date));
+ let cells=['日','一','二','三','四','五','六'].map(w=>'<span class="dow">'+w+'</span>').join('')+'<span class="blank"></span>'.repeat(offset);
+ for(let i=1;i<=count;i++){const key=chefMonth+'-'+String(i).padStart(2,'0');cells+='<button class="'+(available.has(key)?'has ':'')+(chefDay===key?'selected':'')+'" onclick="chefChoose(\\''+key+'\\')">'+i+'</button>'}
+ let html='<div class="calendar"><div class="calendar-head"><button onclick="chefMoveMonth(-1)">‹</button><strong>'+y+' 年 '+m+' 月</strong><button onclick="chefMoveMonth(1)">›</button></div><div class="calendar-grid">'+cells+'</div></div>';
+ html+='<h3>選取日期｜製作盤數</h3>'+chefCard(chefDay,false);
+ html+='<div class="line" style="align-items:center;margin:18px 0 8px"><h3 style="margin:0">未來七日</h3><button class="reload" onclick="chefDay=chefKey(new Date());chefMonth=chefDay.slice(0,7);renderChef()">回到今天</button></div>';
+ for(let i=0;i<7;i++){const dt=new Date(today.getFullYear(),today.getMonth(),today.getDate()+i);const key=chefKey(dt);html+=chefCard(key,true)}
  $('results').innerHTML=html;
 }
 
