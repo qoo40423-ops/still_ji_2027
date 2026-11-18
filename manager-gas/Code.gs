@@ -106,7 +106,7 @@ function mgrNewOrder2027(o){
  const prices=priceType==='一般售價'?[300,750]:priceType==='員工優惠價'?[285,720]:[Number(o.unitSix),Number(o.unitFifteen)];
  if(prices.some(n=>!Number.isSafeInteger(n)||n<0||n>100000))throw Error('自訂單價必須是 0～100000 元的整數');
  const goods=six*prices[0]+fifteen*prices[1];sh=ss.getSheetByName('門市自取');phoneCol=6;deadlineCol=13;
- values=[id,created,date,slot,name,phone,six,fifteen,pieces,goods,priceType+(priceType==='自訂單價'?'（6入,payment,paid?'88888':'',verified,status,note+' [收款:'+ (paid?o.payMethod:'待付款')+'] '+tag];
+ values=[id,created,date,slot,name,phone,six,fifteen,pieces,goods,priceType,goods,deadline,payment,paid?'88888':'',verified,status,note+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
  }else{
  if([0,6].includes(new Date(date+'T00:00:00Z').getUTCDay()))throw Error('週末不提供宅配出貨');
  const invoiceType=String(o.invoiceType||'一般發票').trim(),taxId=String(o.taxId||'').trim();
@@ -164,136 +164,8 @@ function mgrConfirmPayment2027(kind,orderId){
   if(payment==='已付款')return {ok:true,already:true,id};
   if(!['未付款','待核帳','逾期未付'].includes(payment))throw Error('目前付款狀態不允許核帳：'+payment);
   sh.getRange(row,payCol).setValue('已付款');
-  sh.getRange(row,verifiedCol).setValue(new Date());
+  sh.getRange(row,verifiedCol).setValue(new Date());sh.getRange(row,verifiedCol).setNumberFormat('yyyy/mm/dd hh:mm');
   sh.getRange(row,verifiedCol).setNumberFormat('yyyy/mm/dd hh:mm');
-  if(status==='待確認')sh.getRange(row,statusCol).setValue('已確認');
-  SpreadsheetApp.flush();
-  return {ok:true,already:false,id};
- }finally{lock.releaseLock();}
-}
-+prices[0]+'／15入,payment,paid?'88888':'',verified,status,note+' [收款:'+ (paid?o.payMethod:'待付款')+'] '+tag];
- }else{
- if([0,6].includes(new Date(date+'T00:00:00Z').getUTCDay()))throw Error('週末不提供宅配出貨');
- const invoiceType=String(o.invoiceType||'一般發票').trim(),taxId=String(o.taxId||'').trim();
- if(!['一般發票','公司發票'].includes(invoiceType))throw Error('發票類型不正確');
- if(invoiceType==='公司發票'&&!/^\d{8}$/.test(taxId))throw Error('公司發票請填寫8碼統一編號');
- const invoiceNote=invoiceType==='公司發票'?'[發票:公司／統編:'+taxId+']':'[發票:一般]';
- const address=mgrText_(o.address,200,'地址');if(address.length<8||/^(澎湖|金門|連江|馬祖|小琉球|綠島|蘭嶼)/.test(address))throw Error('請填寫台灣本島完整地址');
- const four=mgrInt_(o.four||0,'4盒組'),ten=mgrInt_(o.ten||0,'10盒組'),group=mgrInt_(o.group||0,'15盒組'),bags=mgrInt_(o.bags||0,'提袋');
- if(fifteen>0&&fifteen<4)throw Error('15入宅配至少4盒');if(bags>0&&!group)throw Error('提袋僅限6入15盒組');
- const sixBoxes=four*4+ten*10+group*15;pieces=sixBoxes*6+fifteen*15;if(!pieces)throw Error('請選擇商品');
- const split=Array.from({length:group},(_,i)=>Math.floor(bags/group)+(i<bags%group?1:0));
- const goods=sixBoxes*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10),shipping=four*150+ten*170+split.reduce((a,n)=>a+(n>=5?210:170),0)+cartons15*210;
- const remote=/^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\s/g,''))?(four+ten+group+cartons15)*10:0;
- sh=ss.getSheetByName('宅配到府');phoneCol=5;deadlineCol=18;
- values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' '+invoiceNote+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
- }
- if(!sh)throw Error('找不到訂單工作表');if(pieces>4800||mgrUsage_(ss,date)+pieces>4800)throw Error('一般訂單已超過每日 4800 顆上限');
- const row=sh.getLastRow()+1;sh.getRange(row,phoneCol).setNumberFormat('@');sh.getRange(row,1,1,values.length).setValues([values]);sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');sh.getRange(row,deadlineCol).setNumberFormat('yyyy/mm/dd hh:mm');
- return {ok:true,orderId:id,amount:o.method==='自取'?values[11]:values[16],pieces,paid};
- }finally{lock.releaseLock();}
-}
-function mgrNewVip2027(o){
- const date=mgrDate_(o.date),shift=mgrText_(o.shift,2,'時段'),method=mgrText_(o.method,2,'方式'),name=mgrText_(o.name,80,'對象'),six=mgrInt_(o.six||0,'6入'),fifteen=mgrInt_(o.fifteen||0,'15入'),contact=mgrText_(o.contact,200,'聯絡／地址'),notes=mgrText_(o.notes,300,'備註');
- if(!['上午','下午'].includes(shift)||!['自取','宅配'].includes(method)||!name||six*6+fifteen*15<=0)throw Error('請完整填寫 VIP 公關單');
- const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
- try{const ss=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID),sh=mgrVipSheet_(ss),rid=mgrText_(o.requestId,100,'識別碼');if(!/^[a-zA-Z0-9_-]{12,100}$/.test(rid))throw Error('缺少送單識別碼');
- if(sh.getLastRow()>1){const rows=sh.getRange(2,1,sh.getLastRow()-1,12).getDisplayValues();const found=rows.find(r=>r[11].includes('[APP:'+rid+']'));if(found)return {ok:true,duplicate:true,orderId:found[0]};}
- const id='VIP27-'+Utilities.formatDate(new Date(),MANAGER_TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
- sh.appendRow([id,new Date(),date,shift,method,name,six,fifteen,six*6+fifteen*15,contact,'待製作',notes+' [APP:'+rid+']']);return {ok:true,orderId:id,pieces:six*6+fifteen*15};
- }finally{lock.releaseLock();}
-}
-function mgrCancelVip2027(id){
- const key=String(id||'').trim();if(!/^VIP27-[A-Z0-9-]+$/.test(key))throw Error('VIP 單號無效');
- const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
- try{const sh=mgrVipSheet_(SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID));if(sh.getLastRow()<2)throw Error('找不到 VIP 單');const rows=sh.getRange(2,1,sh.getLastRow()-1,11).getDisplayValues();const matches=rows.map((r,i)=>r[0]===key?i+2:0).filter(Boolean);if(matches.length!==1)throw Error('找不到唯一 VIP 單');const row=matches[0],status=sh.getRange(row,11).getDisplayValue();if(status==='已取消')return {ok:true,already:true};if(status==='已完成')throw Error('已完成公關單請人工處理');sh.getRange(row,11).setValue('已取消');return {ok:true};}finally{lock.releaseLock();}
-}
-
-/** 私人管理 APP：人工確認已實際收到款項，支援自取與宅配。 */
-function mgrConfirmPayment2027(kind,orderId){
- if(!['pickup','delivery'].includes(kind))throw Error('訂單類型不正確');
- const id=String(orderId||'').trim();
- if(!/^(?:SJ-\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
- const lock=LockService.getScriptLock();
- if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後再試');
- try{
-  const sh=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID).getSheetByName(kind==='pickup'?'門市自取':'宅配到府');
-  if(!sh||sh.getLastRow()<2)throw Error('找不到訂單');
-  const ids=sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().map(r=>String(r[0]).trim());
-  const matches=ids.map((v,i)=>v===id?i+2:0).filter(Boolean);
-  if(matches.length!==1)throw Error(matches.length?'訂單編號重複，請人工處理':'找不到訂單');
-  const row=matches[0],payCol=kind==='pickup'?14:19,verifiedCol=kind==='pickup'?16:21,statusCol=kind==='pickup'?17:24;
-  const status=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
-  if(['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(status))throw Error('此訂單狀態不允許核帳：'+status);
-  const payment=String(sh.getRange(row,payCol).getDisplayValue()).trim();
-  if(payment==='已付款')return {ok:true,already:true,id};
-  if(!['未付款','待核帳','逾期未付'].includes(payment))throw Error('目前付款狀態不允許核帳：'+payment);
-  sh.getRange(row,payCol).setValue('已付款');
-  sh.getRange(row,verifiedCol).setValue(new Date());
-  if(status==='待確認')sh.getRange(row,statusCol).setValue('已確認');
-  SpreadsheetApp.flush();
-  return {ok:true,already:false,id};
- }finally{lock.releaseLock();}
-}
-+prices[1]+'）':''),goods,deadline,payment,paid?'88888':'',verified,status,note+' [收款:'+ (paid?o.payMethod:'待付款')+'] '+tag];
- }else{
- if([0,6].includes(new Date(date+'T00:00:00Z').getUTCDay()))throw Error('週末不提供宅配出貨');
- const invoiceType=String(o.invoiceType||'一般發票').trim(),taxId=String(o.taxId||'').trim();
- if(!['一般發票','公司發票'].includes(invoiceType))throw Error('發票類型不正確');
- if(invoiceType==='公司發票'&&!/^\d{8}$/.test(taxId))throw Error('公司發票請填寫8碼統一編號');
- const invoiceNote=invoiceType==='公司發票'?'[發票:公司／統編:'+taxId+']':'[發票:一般]';
- const address=mgrText_(o.address,200,'地址');if(address.length<8||/^(澎湖|金門|連江|馬祖|小琉球|綠島|蘭嶼)/.test(address))throw Error('請填寫台灣本島完整地址');
- const four=mgrInt_(o.four||0,'4盒組'),ten=mgrInt_(o.ten||0,'10盒組'),group=mgrInt_(o.group||0,'15盒組'),bags=mgrInt_(o.bags||0,'提袋');
- if(fifteen>0&&fifteen<4)throw Error('15入宅配至少4盒');if(bags>0&&!group)throw Error('提袋僅限6入15盒組');
- const sixBoxes=four*4+ten*10+group*15;pieces=sixBoxes*6+fifteen*15;if(!pieces)throw Error('請選擇商品');
- const split=Array.from({length:group},(_,i)=>Math.floor(bags/group)+(i<bags%group?1:0));
- const goods=sixBoxes*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10),shipping=four*150+ten*170+split.reduce((a,n)=>a+(n>=5?210:170),0)+cartons15*210;
- const remote=/^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\s/g,''))?(four+ten+group+cartons15)*10:0;
- sh=ss.getSheetByName('宅配到府');phoneCol=5;deadlineCol=18;
- values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' '+invoiceNote+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
- }
- if(!sh)throw Error('找不到訂單工作表');if(pieces>4800||mgrUsage_(ss,date)+pieces>4800)throw Error('一般訂單已超過每日 4800 顆上限');
- const row=sh.getLastRow()+1;sh.getRange(row,phoneCol).setNumberFormat('@');sh.getRange(row,1,1,values.length).setValues([values]);sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');sh.getRange(row,deadlineCol).setNumberFormat('yyyy/mm/dd hh:mm');
- return {ok:true,orderId:id,amount:o.method==='自取'?values[11]:values[16],pieces,paid};
- }finally{lock.releaseLock();}
-}
-function mgrNewVip2027(o){
- const date=mgrDate_(o.date),shift=mgrText_(o.shift,2,'時段'),method=mgrText_(o.method,2,'方式'),name=mgrText_(o.name,80,'對象'),six=mgrInt_(o.six||0,'6入'),fifteen=mgrInt_(o.fifteen||0,'15入'),contact=mgrText_(o.contact,200,'聯絡／地址'),notes=mgrText_(o.notes,300,'備註');
- if(!['上午','下午'].includes(shift)||!['自取','宅配'].includes(method)||!name||six*6+fifteen*15<=0)throw Error('請完整填寫 VIP 公關單');
- const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
- try{const ss=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID),sh=mgrVipSheet_(ss),rid=mgrText_(o.requestId,100,'識別碼');if(!/^[a-zA-Z0-9_-]{12,100}$/.test(rid))throw Error('缺少送單識別碼');
- if(sh.getLastRow()>1){const rows=sh.getRange(2,1,sh.getLastRow()-1,12).getDisplayValues();const found=rows.find(r=>r[11].includes('[APP:'+rid+']'));if(found)return {ok:true,duplicate:true,orderId:found[0]};}
- const id='VIP27-'+Utilities.formatDate(new Date(),MANAGER_TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
- sh.appendRow([id,new Date(),date,shift,method,name,six,fifteen,six*6+fifteen*15,contact,'待製作',notes+' [APP:'+rid+']']);return {ok:true,orderId:id,pieces:six*6+fifteen*15};
- }finally{lock.releaseLock();}
-}
-function mgrCancelVip2027(id){
- const key=String(id||'').trim();if(!/^VIP27-[A-Z0-9-]+$/.test(key))throw Error('VIP 單號無效');
- const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
- try{const sh=mgrVipSheet_(SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID));if(sh.getLastRow()<2)throw Error('找不到 VIP 單');const rows=sh.getRange(2,1,sh.getLastRow()-1,11).getDisplayValues();const matches=rows.map((r,i)=>r[0]===key?i+2:0).filter(Boolean);if(matches.length!==1)throw Error('找不到唯一 VIP 單');const row=matches[0],status=sh.getRange(row,11).getDisplayValue();if(status==='已取消')return {ok:true,already:true};if(status==='已完成')throw Error('已完成公關單請人工處理');sh.getRange(row,11).setValue('已取消');return {ok:true};}finally{lock.releaseLock();}
-}
-
-/** 私人管理 APP：人工確認已實際收到款項，支援自取與宅配。 */
-function mgrConfirmPayment2027(kind,orderId){
- if(!['pickup','delivery'].includes(kind))throw Error('訂單類型不正確');
- const id=String(orderId||'').trim();
- if(!/^(?:SJ-\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
- const lock=LockService.getScriptLock();
- if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後再試');
- try{
-  const sh=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID).getSheetByName(kind==='pickup'?'門市自取':'宅配到府');
-  if(!sh||sh.getLastRow()<2)throw Error('找不到訂單');
-  const ids=sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().map(r=>String(r[0]).trim());
-  const matches=ids.map((v,i)=>v===id?i+2:0).filter(Boolean);
-  if(matches.length!==1)throw Error(matches.length?'訂單編號重複，請人工處理':'找不到訂單');
-  const row=matches[0],payCol=kind==='pickup'?14:19,verifiedCol=kind==='pickup'?16:21,statusCol=kind==='pickup'?17:24;
-  const status=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
-  if(['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(status))throw Error('此訂單狀態不允許核帳：'+status);
-  const payment=String(sh.getRange(row,payCol).getDisplayValue()).trim();
-  if(payment==='已付款')return {ok:true,already:true,id};
-  if(!['未付款','待核帳','逾期未付'].includes(payment))throw Error('目前付款狀態不允許核帳：'+payment);
-  sh.getRange(row,payCol).setValue('已付款');
-  sh.getRange(row,verifiedCol).setValue(new Date());
   if(status==='待確認')sh.getRange(row,statusCol).setValue('已確認');
   SpreadsheetApp.flush();
   return {ok:true,already:false,id};
