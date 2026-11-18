@@ -117,7 +117,7 @@ function createOrder2027(data){
       const staff=data.staffApproved===true;
       if(staff)throw Error('員工優惠尚未啟用後端授權，請先以原價測試');
       const goods=six*300+fifteen*750;
-      values=[orderId,created,date,time,name,phone,six,fifteen,pieces,goods,'一般售價',goods,deadline,'未付款','','','待付款',notes+' [RID:'+rid+']'];
+      values=[orderId,created,date,time,name,phone,six,fifteen,pieces,goods,'一般售價',goods,deadline,'未付款','','','待確認',notes+' [RID:'+rid+']'];
       sh=sjSheet_(SJ27.PICKUP);
     }else{
       const address=sjAddress_(data.address),four=sjNum_(data.four,'4盒組'),ten=sjNum_(data.ten,'10盒組'),group=sjNum_(data.fifteenGroup,'15盒組'),fifteen=sjNum_(data.fifteenBoxes,'15入盒數'),bags=sjNum_(data.bags,'提袋');
@@ -130,7 +130,7 @@ function createOrder2027(data){
       const goods=six*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10);
       const shipping=four*150+ten*170+bagSplit.reduce((sum,n)=>sum+(n>=5?210:170),0)+cartons15*210;
       const remoteFee=sjRemote_(address)?(four+ten+group+cartons15)*10:0;
-      values=[orderId,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remoteFee,goods+bagFee+shipping+remoteFee,deadline,'未付款','','','待回傳宅配單','','待付款',notes+' [RID:'+rid+']'];
+      values=[orderId,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remoteFee,goods+bagFee+shipping+remoteFee,deadline,'未付款','','','待回傳','','待確認',notes+' [RID:'+rid+']'];
       sh=sjSheet_(SJ27.DELIVERY);
     }
     if(pieces>SJ27.LIMIT)throw Error('單筆訂單超過每日產能上限');
@@ -203,4 +203,34 @@ function paymentAudit2027(){
   Logger.log(JSON.stringify(report));return report;
 }
 /** 只執行唯讀付款稽核，測試階段請先使用這個。 */
+function testPaymentAudit2027(){return paymentAudit2027();}
+
+/**
+ * S-02｜付款管理安全稽核（READ ONLY）。
+ * 只列出逾期候選與待核帳訂單；不更改任何欄位、不取消訂單。
+ * 使用付款截止時間 Date 儲存值；只有「未付款」且訂單仍有效才是候選。
+ */
+function paymentAudit2027(){
+  const now=new Date(),result={mode:'READ ONLY',checkedAt:Utilities.formatDate(now,SJ27.TZ,'yyyy/MM/dd HH:mm:ss'),expiredCandidates:[],awaitingReconciliation:[],warnings:[],counts:{pickup:0,delivery:0}};
+  for(const [name,kind,deadlineIndex,payIndex,statusIndex,amountIndex] of [
+    [SJ27.PICKUP,'自取',12,13,16,11],
+    [SJ27.DELIVERY,'宅配',17,18,23,16]
+  ]){
+    const rows=sjDataRows_(name);result.counts[kind==='自取'?'pickup':'delivery']=rows.length;
+    rows.forEach(r=>{
+      const orderId=String(r[0]||''),pay=String(r[payIndex]||'').trim(),status=String(r[statusIndex]||'').trim();
+      const deadline=r[deadlineIndex],deadlineTime=deadline instanceof Date?deadline.getTime():NaN;
+      const info={orderId,method:kind,paymentStatus:pay,orderStatus:status,amount:Number(r[amountIndex])||0,deadline:deadline instanceof Date?Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm'):String(deadline||'')};
+      if(pay==='待核帳')result.awaitingReconciliation.push(info);
+      if(!sjStatusActive_(status)||pay==='已付款'||pay==='退款中'||pay==='已退款')return;
+      if(!Number.isFinite(deadlineTime)){result.warnings.push({orderId,issue:'付款截止時間無法解析，未判定逾期'});return;}
+      if(pay==='未付款'&&deadlineTime<now.getTime())result.expiredCandidates.push(info);
+      else if(pay==='逾期未付')result.warnings.push({orderId,issue:'已標記逾期未付，但尚未取消；請人工核對'});
+    });
+  }
+  Logger.log('===== S-02 付款稽核｜READ ONLY =====');
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+/** S-02：第一次先執行此函式，完全不寫入試算表。 */
 function testPaymentAudit2027(){return paymentAudit2027();}
