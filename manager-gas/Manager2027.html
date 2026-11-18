@@ -90,11 +90,13 @@ if(tab==='pickup'){
   const canPay=['未付款','待核帳','逾期未付'].includes(o.payment)&&!['已取消','取消','作廢','已退款','已取貨','已出貨'].includes(o.status);
   const canCollect=o.payment==='已付款'&&['已確認','製作中'].includes(o.status);
   return '<article class="card pickup-order-card"><div class="line"><strong>'+esc(o.name)+'</strong><span class="pill">'+esc(o.payment)+'</span></div><div class="muted">'+esc(o.id)+'</div>'
-   +line('日期',shortDate+'　取貨時段：'+o.slot)
+   +line('日期',shortDate)
+   +line('取貨時段',o.slot)
    +line('訂單內容',products)
    +line('金額','NT$ '+Number(o.amount||0).toLocaleString('zh-TW'))
    +line('手機',o.phone)
-   +line('訂單狀態',o.status+'　/　匯款後五碼：'+(o.remittance||'—'))
+   +line('訂單狀態',o.status)
+   +line('匯款後五碼',o.remittance||'—')
    +(canPay?'<button class="collect" onclick="confirmPayment(\'pickup\','+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已收款</button>':'')
    +(canCollect?'<button class="collect" onclick="collect('+JSON.stringify(o.id).replace(/"/g,'&quot;')+')">確認已取貨</button>':'')
    +'</article>';
