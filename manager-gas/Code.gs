@@ -19,7 +19,7 @@ function managerSnapshot2027(){
  const make=date=>map[date]||(map[date]={date,morning:empty(),afternoon:empty(),pickup:empty(),delivery:empty(),slots:{'09:00~10:00':empty(),'09:00~12:00':empty(),'13:00~15:00':empty(),'15:00~17:00':empty(),'17:00~18:00':empty()},unclassified:empty()});
  const active=o=>!['已取消','取消','作廢'].includes(o.status);
  const slotKey=slot=>{
-  const t=String(slot||'').replace(/\\s/g,'').replace(/[～〜－–—]/g,'~').replace(/：/g,':');
+  const t=String(slot||'').replace(/\s/g,'').replace(/[～〜－–—]/g,'~').replace(/：/g,':');
   for(const k of ['09:00~10:00','09:00~12:00','13:00~15:00','15:00~17:00','17:00~18:00'])if(t.includes(k))return k;
   if(t==='上午')return '09:00~12:00';
   return '';
@@ -65,8 +65,8 @@ function markPickupCollected2027(orderId){
 const MGR_VIP_HEADERS=['VIP單號','建立時間','製作日期','製作時段','交付方式','對象／單位','6入盒數','15入盒數','顆數','聯絡／地址','狀態','備註'];
 function mgrInt_(v,label){const n=Number(v);if(!Number.isSafeInteger(n)||n<0)throw Error(label+'必須是非負整數');return n;}
 function mgrText_(v,max,label){const s=String(v==null?'':v).trim();if(s.length>max)throw Error(label+'字數過長');return s;}
-function mgrDate_(v){const s=String(v||'');if(!/^2027-(08|09)-\\d{2}$/.test(s)||s>'2027-09-15'||new Date(s+'T00:00:00Z').toISOString().slice(0,10)!==s)throw Error('請選擇有效的 2027/8/1～9/15 日期');return s;}
-function mgrPhone_(v){const s=mgrText_(v,30,'電話').replace(/[\\s()－-]/g,'');if(!/^(09\\d{8}|0[2-8]\\d{7,8}(?:#\\d{1,6})?)$/.test(s))throw Error('請填寫有效電話');return s;}
+function mgrDate_(v){const s=String(v||'');if(!/^2027-(08|09)-\d{2}$/.test(s)||s>'2027-09-15'||new Date(s+'T00:00:00Z').toISOString().slice(0,10)!==s)throw Error('請選擇有效的 2027/8/1～9/15 日期');return s;}
+function mgrPhone_(v){const s=mgrText_(v,30,'電話').replace(/[\s()－-]/g,'');if(!/^(09\d{8}|0[2-8]\d{7,8}(?:#\d{1,6})?)$/.test(s))throw Error('請填寫有效電話');return s;}
 function mgrVipSheet_(ss){let sh=ss.getSheetByName('老闆VIP公關單');if(!sh){sh=ss.insertSheet('老闆VIP公關單');sh.getRange(1,1,1,12).setValues([MGR_VIP_HEADERS]);sh.setFrozenRows(1);}else{const heads=sh.getRange(1,1,1,12).getDisplayValues()[0];if(heads.some((x,i)=>x!==MGR_VIP_HEADERS[i]))throw Error('VIP 工作表表頭不符，已停止寫入');}return sh;}
 function mgrUsage_(ss,date){let ordinary=0;for(const [name,dcol,pcol,scol] of [['門市自取',3,9,17],['宅配到府',3,12,24]]){const sh=ss.getSheetByName(name);if(!sh||sh.getLastRow()<2)continue;sh.getRange(2,1,sh.getLastRow()-1,scol).getValues().forEach(v=>{const d=v[dcol-1] instanceof Date?Utilities.formatDate(v[dcol-1],MANAGER_TZ,'yyyy-MM-dd'):String(v[dcol-1]);if(d===date&&!['已取消','取消','作廢','已退款'].includes(String(v[scol-1])))ordinary+=Number(v[pcol-1])||0;});}return ordinary;}
 function mgrRid_(){return Utilities.getUuid().replace(/-/g,'').slice(0,20);}
@@ -98,7 +98,7 @@ function mgrNewOrder2027(o){
  const sixBoxes=four*4+ten*10+group*15;pieces=sixBoxes*6+fifteen*15;if(!pieces)throw Error('請選擇商品');
  const split=Array.from({length:group},(_,i)=>Math.floor(bags/group)+(i<bags%group?1:0));
  const goods=sixBoxes*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10),shipping=four*150+ten*170+split.reduce((a,n)=>a+(n>=5?210:170),0)+cartons15*210;
- const remote=/^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\\s/g,''))?(four+ten+group+cartons15)*10:0;
+ const remote=/^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\s/g,''))?(four+ten+group+cartons15)*10:0;
  sh=ss.getSheetByName('宅配到府');phoneCol=5;deadlineCol=18;
  values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
  }
