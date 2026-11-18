@@ -1,3 +1,16 @@
+/** 與公開 TEST 訂單共用編號空間，避免跨表重複。 */
+function mgrShortOrderId_(ss){
+ const used=new Set();
+ for(const name of ['門市自取','宅配到府']){
+  const sh=ss.getSheetByName(name);
+  if(sh&&sh.getLastRow()>1)sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().forEach(r=>used.add(String(r[0]).trim().toUpperCase()));
+ }
+ for(let n=0;n<200;n++){
+  const id='SJ-'+String(Math.floor(Math.random()*90000)+10000);
+  if(!used.has(id))return id;
+ }
+ throw Error('暫時無法產生唯一訂單編號，請稍後重試');
+}
 /** 紀家烘焙坊 116 中秋｜獨立管理 GAS（TEST）
  * 請建立另一個 Apps Script 專案，部署為「執行身分：我／存取權：只有自己」。
  * 不要貼到既有公開匯款回報的 Code.gs。
@@ -38,7 +51,7 @@ function managerSnapshot2027(){
 /** 僅允許已核帳的自取訂單標記已取貨；操作僅更新 Q 欄。 */
 function markPickupCollected2027(orderId){
  const id=String(orderId||'').trim();
- if(!/^SJ27-[A-Z0-9-]{8,30}$/.test(id))throw Error('訂單編號格式不正確');
+ if(!/^(?:SJ-\\d{5}|SJ27-[A-Z0-9-]{8,30})$/.test(id))throw Error('訂單編號格式不正確');
  const lock=LockService.getScriptLock();
  if(!lock.tryLock(15000))throw Error('系統忙碌，請稍後重試');
  try{
@@ -79,7 +92,7 @@ function mgrNewOrder2027(o){
  let pieces,values,sh,phoneCol,deadlineCol;
  const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌，請稍後重試');
  try{
- const created=new Date(),deadline=new Date(created.getTime()+72*3600000),id='SJ27-'+Utilities.formatDate(created,MANAGER_TZ,'yyMMdd')+'-'+Utilities.getUuid().slice(0,8).toUpperCase();
+ const created=new Date(),deadline=new Date(created.getTime()+72*3600000),id=mgrShortOrderId_(ss);
  const payment=paid?'已付款':'未付款',verified=paid?created:'',status=paid?(o.method==='自取'?'已確認':'待出貨'):'待確認';
  const tag='[APP:'+mgrText_(o.requestId,100,'請求識別碼')+']';
  if(!/^[a-zA-Z0-9_-]{12,100}$/.test(o.requestId||''))throw Error('缺少有效的送單識別碼');
