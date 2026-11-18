@@ -49,3 +49,25 @@ body .btn,body .payment-reminder,body .eyebrow+ h1{color:var(--sj-brand)}
 body button[type=submit],body .submit-btn{border-color:var(--sj-brand)}
 body .btn:focus-visible,body button:focus-visible,body a:focus-visible{outline-color:var(--sj-brand)}
 body .choices .choice strong{color:var(--sj-brand)!important}
+
+/* Accessibility pass: comfortable reading size for older customers. */
+html{font-size:17px!important}
+body{font-size:17px!important;line-height:1.9!important}
+body p,body li,body label,body summary,body .muted,body .notice,body .flow-alert,body .hint,body .help,body .payment-reminder{font-size:17px!important;line-height:1.95!important}
+body input:not([type=checkbox]):not([type=radio]),body select,body textarea,body button,body .btn{font-size:17px!important;line-height:1.6}
+body input:not([type=checkbox]):not([type=radio]),body select{min-height:46px}
+body .eyebrow,body .kicker{font-size:14px!important}
+body>header .sj-global-nav .brand{font-size:18px!important}
+body>header .sj-global-nav .links a{font-size:15px!important;line-height:1.7!important}
+body footer{font-size:15px!important;line-height:1.9!important}
+body footer .social-icons .social-icon-link{font-size:15px!important}
+body .choices .choice strong{font-size:21px!important}
+@media(max-width:760px){
+ html{font-size:16px!important}
+ body{font-size:16px!important}
+ body p,body li,body label,body summary,body .muted,body .notice,body .flow-alert,body .hint,body .help,body .payment-reminder{font-size:16px!important}
+ body input:not([type=checkbox]):not([type=radio]),body select,body textarea,body button,body .btn{font-size:16px!important}
+ body>header .sj-global-nav .brand{font-size:17px!important}
+ body>header .sj-global-nav .links a{font-size:14px!important}
+ body .choices .choice strong{font-size:19px!important}
+}
