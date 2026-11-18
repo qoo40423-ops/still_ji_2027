@@ -567,3 +567,47 @@ function previewBatchOverdue2027(){
   Logger.log(JSON.stringify(result));return result;
 }
 function testPreviewBatchOverdue2027(){return previewBatchOverdue2027();}
+
+/**
+ * S-06B｜批次取消純模擬：不讀寫試算表、不安裝觸發器。
+ * 模擬兩張表、多筆逾期、待核帳保護及重複執行。
+ */
+function testBatchOverdueSimulation2027(){
+  const now=Date.now();
+  const cases=[
+    {id:'P1',sheet:'門市自取',date:'2027-09-03',pieces:48,pay:'未付款',status:'待確認',hoursAgo:1},
+    {id:'D1',sheet:'宅配到府',date:'2027-09-03',pieces:24,pay:'逾期未付',status:'待確認',hoursAgo:10},
+    {id:'P2',sheet:'門市自取',date:'2027-09-04',pieces:60,pay:'未付款',status:'待確認',hoursAgo:2},
+    {id:'P3',sheet:'門市自取',date:'2027-09-03',pieces:30,pay:'已付款',status:'已確認',hoursAgo:8},
+    {id:'D2',sheet:'宅配到府',date:'2027-09-03',pieces:24,pay:'待核帳',status:'待確認',hoursAgo:8},
+    {id:'D3',sheet:'宅配到府',date:'2027-09-03',pieces:24,pay:'未付款',status:'待確認',hoursAgo:-1},
+    {id:'P4',sheet:'門市自取',date:'2027-09-04',pieces:48,pay:'逾期未付',status:'已取消',hoursAgo:8},
+    {id:'D4',sheet:'宅配到府',date:'2027-09-04',pieces:24,pay:'退款中',status:'待確認',hoursAgo:8}
+  ];
+  const eligible=x=>['未付款','逾期未付'].includes(x.pay)&&
+    ['待確認','待付款'].includes(x.status)&&
+    now-x.hoursAgo*3600000<now;
+  function pass(){
+    const cancelled=[],released={};
+    for(const x of cases){
+      if(!eligible(x))continue;
+      cancelled.push(x.id);
+      released[x.date]=(released[x.date]||0)+x.pieces;
+      x.pay='逾期未付';x.status='已取消';
+    }
+    return {cancelled,released};
+  }
+  const first=pass(),second=pass();
+  const expected=['P1','D1','P2'];
+  const passed=JSON.stringify(first.cancelled)===JSON.stringify(expected)&&
+    first.released['2027-09-03']===72&&
+    first.released['2027-09-04']===60&&
+    second.cancelled.length===0&&Object.keys(second.released).length===0&&
+    cases.find(x=>x.id==='P3').status==='已確認'&&
+    cases.find(x=>x.id==='D2').pay==='待核帳';
+  const result={mode:'SIMULATION ONLY',passed,first,second,
+    protectedCases:cases.filter(x=>!expected.includes(x.id)).map(x=>({id:x.id,pay:x.pay,status:x.status})),
+    note:'僅記憶體模擬；尚未驗證批次實際寫入與觸發器'};
+  Logger.log('===== S-06B 批次取消及重複執行純模擬 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
