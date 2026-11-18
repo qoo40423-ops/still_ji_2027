@@ -909,3 +909,45 @@ function previewOverdueSafety2027(){
   Logger.log('===== S-08B 真實 TEST 訂單安全預覽｜READ ONLY =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/** S-08C｜只建立兩筆專用 TEST 保護單，不取消、不安裝排程。 */
+function setupOverdueProtectionFixtures2027(){
+  const cases=[
+    {rid:'TEST-S08C-YOUNG-2027-0001',name:'S08C未滿72小時',date:'2027-09-09',kind:'young'},
+    {rid:'TEST-S08C-REMIT-2027-0001',name:'S08C已填匯款資料',date:'2027-09-10',kind:'remit'}
+  ];
+  const results=[];
+  for(const x of cases){
+    let existing=sjDuplicate_(x.rid);
+    if(!existing){
+      existing=createOrder2027({method:'自取',name:x.name,phone:'0912345678',
+        date:x.date,pickupTime:'13:00–15:00',sixBoxes:8,fifteenBoxes:0,
+        notes:'S08C 安全保護專用測試',requestId:x.rid});
+    }
+    const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+    const rows=sh.getRange(2,1,last-1,18).getValues();
+    const hits=rows.map((v,i)=>({v,row:i+2})).filter(y=>
+      String(y.v[0]||'')===existing.orderId&&
+      String(y.v[17]||'').includes('[RID:'+x.rid+']'));
+    if(hits.length!==1)throw Error('S08C 測試單識別不唯一，請停止：'+x.rid);
+    const h=hits[0],v=h.v;
+    if(String(v[13])!=='未付款'||String(v[16])!=='待確認')
+      throw Error('S08C 測試單狀態已變動，請停止：'+x.rid);
+    // 只在新建立的測試單上做一次設定；重跑不覆寫人工修改。
+    if(!existing.duplicate){
+      if(x.kind==='remit'){
+        const created=new Date(Date.now()-96*3600000);
+        sh.getRange(h.row,2).setValue(created).setNumberFormat('yyyy/mm/dd hh:mm');
+        sh.getRange(h.row,13).setValue(new Date(created.getTime()+72*3600000))
+          .setNumberFormat('yyyy/mm/dd hh:mm');
+        sh.getRange(h.row,15).setNumberFormat('@').setValue('12345');
+      }
+    }
+    results.push({orderId:existing.orderId,row:h.row,kind:x.kind,
+      createdNew:!existing.duplicate,expectedProtection:x.kind==='young'?'成立未滿72小時':'已有匯款資料，等待人工確認'});
+  }
+  const result={mode:'SETUP TEST ONLY',sheet:SJ27.PICKUP,orders:results,
+    note:'只建立或尋找兩筆專用測試單；請下一步執行 previewOverdueSafety2027 唯讀確認'};
+  Logger.log('===== S-08C 建立安全保護測試單 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
