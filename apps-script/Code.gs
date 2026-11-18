@@ -991,3 +991,38 @@ function setupOverdue72hCandidate2027(){
   Logger.log('===== S-09A 建立滿72小時逾期候選 TEST 單 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/** S-10A｜取消後重複執行安全性 + 排程狀態；完全唯讀。 */
+function inspectOverdueSchedulerSafety2027(){
+  const orderId='SJ27-261118-31901CB0';
+  const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+  const rows=last<2?[]:sh.getRange(2,1,last-1,18).getValues();
+  const hits=rows.map((v,i)=>({v,row:i+2})).filter(x=>String(x.v[0]||'').trim()===orderId);
+  const warnings=[];
+  if(hits.length!==1)warnings.push('S-09 測試訂單不存在或重複');
+  let testOrder=null;
+  if(hits.length===1){
+    const x=hits[0],v=x.v;
+    const decision=sjOverdueSafeDecision2027_(v,
+      {pay:14,status:17,deadline:13,remit:15,pieces:9},Date.now());
+    testOrder={orderId,row:x.row,payment:v[13],status:v[16],pieces:v[8],
+      date:sjDateValue_(v[2]),decision:decision.kind,
+      excludedFromRepeatCancellation:decision.kind!=='candidate'};
+    if(v[13]!=='逾期未付'||v[16]!=='已取消'||decision.kind!=='protected')
+      warnings.push('S-09 測試單取消後狀態不符');
+  }
+  const preview=previewOverdueSafety2027();
+  const triggers=ScriptApp.getProjectTriggers();
+  const overdue=triggers.filter(t=>t.getHandlerFunction()==='applyOverdueAll2027');
+  const result={mode:'READ ONLY S-10A',testOrder,
+    candidateCount:preview.candidateCount,candidates:preview.candidates,
+    warnings:warnings.concat(preview.warnings),
+    overdueTriggerCount:overdue.length,
+    triggerAlreadyInstalled:overdue.length>0,
+    passed:warnings.length===0&&preview.warnings.length===0&&
+      preview.candidateCount===0&&overdue.length===0,
+    writePerformed:false,
+    note:'本函式不執行取消，不安裝排程；passed 僅代表此時資料符合驗收預期'};
+  Logger.log('===== S-10A 重複取消與排程狀態唯讀驗收 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
