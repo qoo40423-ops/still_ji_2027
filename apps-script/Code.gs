@@ -676,3 +676,58 @@ function inspectPublicRemittanceGate2027(){
   Logger.log('===== S-11F 公開入口預設關閉檢查 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+
+/**
+ * S-12｜內部管理側欄（不新增 doGet，不向公開網站提供訂單資料）。
+ * 由 Apps Script 編輯器手動執行 openOrderManager2027 開啟；
+ * 若為獨立 Apps Script，請先確認 SpreadsheetApp.getUi() 是否可用。
+ */
+function managerSnapshot2027(){
+  if(SJ27.SPREADSHEET_ID!=='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4')
+    throw Error('管理端僅允許 TEST 試算表');
+  const stamp=v=>v instanceof Date?Utilities.formatDate(v,SJ27.TZ,'yyyy/MM/dd HH:mm'):String(v==null?'':v);
+  const pickup=sjDataRows_(SJ27.PICKUP).map(v=>({
+    type:'自取',id:String(v[0]),date:sjDateValue_(v[2]),slot:stamp(v[3]),
+    name:String(v[4]),phone:String(v[5]),quantity:'6入×'+v[6]+'、15入×'+v[7],
+    pieces:Number(v[8])||0,amount:Number(v[11])||0,deadline:stamp(v[12]),
+    payment:String(v[13]),remittance:String(v[14]||''),verified:stamp(v[15]),
+    status:String(v[16]),note:String(v[17]||'')
+  }));
+  const delivery=sjDataRows_(SJ27.DELIVERY).map(v=>({
+    type:'宅配',id:String(v[0]),date:sjDateValue_(v[2]),slot:'出貨',
+    name:String(v[3]),phone:String(v[4]),address:String(v[5]),
+    quantity:'4盒組×'+v[6]+'、10盒組×'+v[7]+'、15盒組×'+v[8]+'、15入×'+v[9],
+    pieces:Number(v[11])||0,amount:Number(v[16])||0,deadline:stamp(v[17]),
+    payment:String(v[18]),remittance:String(v[19]||''),verified:stamp(v[20]),
+    slipConfirmation:String(v[21]||''),tracking:String(v[22]||''),
+    status:String(v[23]),note:String(v[24]||'')
+  }));
+  const map={};
+  pickup.concat(delivery).forEach(o=>{
+    if(!sjStatusActive_(o.status))return;
+    const d=map[o.date]||(map[o.date]={date:o.date,pickup:0,delivery:0});
+    if(o.type==='自取')d.pickup+=o.pieces;else d.delivery+=o.pieces;
+  });
+  const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({
+    ...d,total:d.pickup+d.delivery,pans:Math.ceil((d.pickup+d.delivery)/60),
+    remaining:Math.max(0,SJ27.LIMIT-d.pickup-d.delivery),limit:SJ27.LIMIT
+  }));
+  return {generatedAt:stamp(new Date()),pickup,delivery,capacity,
+    counts:{pickup:pickup.length,delivery:delivery.length,
+      pendingReview:pickup.concat(delivery).filter(o=>o.payment==='待核帳').length,
+      unpaid:pickup.concat(delivery).filter(o=>o.payment==='未付款'&&sjStatusActive_(o.status)).length}};
+}
+function openOrderManager2027(){
+  const html=HtmlService.createHtmlOutputFromFile('Manager2027')
+    .setTitle('紀家烘焙坊｜2027 TEST 管理');
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+/** S-12 唯讀煙霧測試：無新增或修改資料。 */
+function inspectOrderManager2027(){
+  const data=managerSnapshot2027();
+  const result={mode:'READ ONLY S-12',counts:data.counts,capacityDates:data.capacity.length,
+    hasPickup:Array.isArray(data.pickup),hasDelivery:Array.isArray(data.delivery),
+    writePerformed:false};
+  Logger.log(JSON.stringify(result));return result;
+}
