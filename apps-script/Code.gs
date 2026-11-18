@@ -490,7 +490,7 @@ function submitPickupRemittance2027(data){
   const phone=sjPhone_(data.phone);
   const last5=String(data.last5||'').trim();
   if(!/^SJ27-[0-9]{6}-[A-F0-9]{8}$/.test(orderId))throw Error('訂單編號格式不正確');
-  if(!/^\\d{5}$/.test(last5)||last5==='88888')throw Error('請填寫有效的匯款帳號後五碼');
+  if(!/^\d{5}$/.test(last5)||last5==='88888')throw Error('請填寫有效的匯款帳號後五碼');
   const lock=LockService.getScriptLock();
   if(!lock.tryLock(30000))throw Error('目前系統忙碌，請稍後再試');
   try{
@@ -548,5 +548,21 @@ function inspectPickupRemittance2027(){
     deliverySheetUntouched:true,writePerformed:false,
     publicEndpointEnabled:false};
   Logger.log('===== S-11A 自取匯款回報安全檢查 =====');
+  Logger.log(JSON.stringify(result));return result;
+}
+
+
+/** S-11B｜只驗證匯款碼格式；不讀寫試算表、不提交訂單。 */
+function testPickupRemittanceValidation2027(){
+  const source=String(submitPickupRemittance2027);
+  const checks={
+    fiveDigitPatternFixed:source.includes('/^\\d{5}$/'),
+    reserved88888Rejected:source.includes("last5==='88888'"),
+    onlyPickupSheet:source.includes('sjSheet_(SJ27.PICKUP)'),
+    setsPendingReview:source.includes("setValue('待核帳')"),
+    noPublicEndpoint:typeof doPost==='undefined'&&typeof doGet==='undefined'
+  };
+  const result={mode:'READ ONLY S-11B',checks,passed:Object.values(checks).every(Boolean),writePerformed:false};
+  Logger.log('===== S-11B 自取回報程式安全檢查 =====');
   Logger.log(JSON.stringify(result));return result;
 }
