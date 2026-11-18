@@ -24,9 +24,20 @@ footer .social-icons .social-icon-link:hover{background:#f0e5d9!important;border
 footer .social-icons .social-icon-link svg{display:block!important;width:20px!important;height:20px!important;flex:0 0 20px!important;fill:none}
 footer .social-icons .social-icon-link svg path[fill="currentColor"],footer .social-icons .social-icon-link svg circle[fill="currentColor"]{fill:currentColor!important}
 footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons .social-icon-link svg rect:not([fill]){fill:currentColor}
+</style><style id="pickup-date-stacked-remittance">
+/* Date calendar first, pickup time below, on desktop and mobile. */
+.pickup-datetime-grid{display:flex!important;flex-direction:column!important;gap:18px!important;align-items:stretch!important}
+.pickup-date-column,.pickup-time-column{width:100%!important;min-width:0!important}
+.pickup-date-column .calendar{width:100%!important;max-width:100%!important}
+.pickup-time-column{padding:18px!important}
+.pickup-time-column select{width:100%!important;max-width:460px!important}
+.remittance-option{margin-top:9px;line-height:1.9}
+.remittance-link{display:inline-flex;align-items:center;justify-content:center;margin:7px 0 2px 12px;padding:7px 15px;border:1px solid #9b6271;border-radius:999px;background:#fffdfa;color:#803d50;text-decoration:none;font-weight:700;white-space:nowrap}
+.remittance-link:hover,.remittance-link:focus-visible{background:#f1e4df}
+@media(max-width:540px){.remittance-link{margin-left:0;display:table}.pickup-time-column{padding:14px!important}}
 </style></head><body><header><nav><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a></div></nav></header><main>
 <section class="panel"><a href="order.html">← 返回訂購方式</a><h1>現場自取</h1><p class="muted">116 年中秋蛋黃酥預購</p><p class="notice">請確認訂購資訊及取貨日期，送出後將產生訂單編號。</p></section>
-<section class="flow-guide" aria-label="現場自取訂購流程"><h2>現場自取・訂購流程</h2><p>訂單成立後，請依序完成付款及通知；店家確認款項後，依預約時段領取。</p><div class="flow-steps" style="--flow-count:4"><div class="flow-step"><span class="dot">1</span><strong>官網訂購</strong><small>取得訂單編號</small></div><div class="flow-step"><span class="dot">2</span><strong>匯款並通知</strong><small>LINE 提供後五碼</small></div><div class="flow-step"><span class="dot">3</span><strong>店家核帳</strong><small>確認收到款項</small></div><div class="flow-step"><span class="dot">4</span><strong>預約取貨</strong><small>依指定時段領取</small></div></div><div class="flow-alert"><strong class="payment-title">付款提醒</strong><ol class="payment-list"><li>訂單成立後請於 72 小時內完成匯款，並透過官方 LINE 提供訂單編號及匯款帳號後五碼。</li><li>正式訂單成立頁將顯示專屬繳費截止時間；逾期未付款訂單將取消。</li></ol></div></section><section class="panel"><h2>01｜提貨人姓名／手機</h2><div class="form-grid">
+<section class="flow-guide" aria-label="現場自取訂購流程"><h2>現場自取・訂購流程</h2><p>訂單成立後，請依序完成付款及通知；店家確認款項後，依預約時段領取。</p><div class="flow-steps" style="--flow-count:4"><div class="flow-step"><span class="dot">1</span><strong>官網訂購</strong><small>取得訂單編號</small></div><div class="flow-step"><span class="dot">2</span><strong>匯款並通知</strong><small>LINE 提供後五碼</small></div><div class="flow-step"><span class="dot">3</span><strong>店家核帳</strong><small>確認收到款項</small></div><div class="flow-step"><span class="dot">4</span><strong>預約取貨</strong><small>依指定時段領取</small></div></div><div class="flow-alert"><strong class="payment-title">付款提醒</strong><ol class="payment-list"><li>訂單成立後請於 72 小時內完成匯款，並透過官方 LINE 提供訂單編號及匯款帳號後五碼。<div class="remittance-option">或是利用「自取匯款回報」功能回報您的匯款後五碼。<a class="remittance-link" href="remittance.html">自取匯款回報</a></div></li><li>正式訂單成立頁將顯示專屬繳費截止時間；逾期未付款訂單將取消。</li></ol></div></section><section class="panel"><h2>01｜提貨人姓名／手機</h2><div class="form-grid">
 <div class="form-field"><label for="pickupName">提貨人姓名</label><input id="pickupName" autocomplete="name" placeholder="請填寫提貨人姓名"></div>
 <div class="form-field"><label for="pickupPhone">提貨人聯絡電話（手機／市話）</label><input id="pickupPhone" autocomplete="tel" inputmode="tel" placeholder="例如：0912345678 或 04-1234567"></div>
 
