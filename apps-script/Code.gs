@@ -611,3 +611,42 @@ function testBatchOverdueSimulation2027(){
   Logger.log('===== S-06B 批次取消及重複執行純模擬 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+/**
+ * S-06C 第一步：建立兩筆專用 TEST 逾期訂單，供後續實際批次取消驗證。
+ * 僅手動執行；RID 去重；不取消任何訂單，不建立觸發器。
+ * 一筆自取（48 顆）、一筆宅配（24 顆），同一出貨／取貨日。
+ */
+function setupBatchOverdueTestOrders2027(){
+  const specs=[
+    {method:'自取',rid:'TEST-S06C-PICKUP-2027-0001',name:'S06C自取測試',
+      date:'2027-09-06',pickupTime:'13:00–15:00',sixBoxes:8,fifteenBoxes:0},
+    {method:'宅配',rid:'TEST-S06C-DELIVERY-2027-0001',name:'S06C宅配測試',
+      date:'2027-09-06',address:'彰化縣彰化市中山路一段1號',four:1,ten:0,fifteenGroup:0,fifteenBoxes:0,bags:0}
+  ];
+  const results=[];
+  for(const spec of specs){
+    const existing=sjDuplicate_(spec.rid);
+    if(existing){
+      results.push({method:spec.method,existing:true,orderId:existing.orderId,
+        note:'既有測試單不重新修改期限'});continue;
+    }
+    const created=createOrder2027(Object.assign({},spec,{
+      phone:'0912345678',requestId:spec.rid,notes:'S06C 專用批次取消測試'
+    }));
+    const name=spec.method==='自取'?SJ27.PICKUP:SJ27.DELIVERY;
+    const sh=sjSheet_(name),last=sh.getLastRow();
+    const ids=sh.getRange(2,1,last-1,1).getDisplayValues();
+    const idx=ids.findIndex(v=>v[0]===created.orderId);
+    if(idx<0)throw Error('建立後找不到 '+created.orderId+'，請檢查表格');
+    const row=idx+2,deadlineCol=spec.method==='自取'?13:18;
+    sh.getRange(row,deadlineCol).setValue(new Date(Date.now()-24*3600000))
+      .setNumberFormat('yyyy/mm/dd hh:mm');
+    results.push({method:spec.method,orderId:created.orderId,row,
+      pieces:created.pieces,date:spec.date,deadline:'昨天（僅測試單）'});
+  }
+  Logger.log('===== S-06C 建立批次專用測試訂單 =====');
+  Logger.log(JSON.stringify({mode:'SETUP WRITE TEST ONLY',results,
+    note:'尚未取消任何訂單；請先檢查兩筆資料及 READ ONLY 預演'}));
+  return results;
+}
