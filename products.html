@@ -49,6 +49,16 @@ header{padding:0;background:#fffdf9;border-bottom:1px solid #e8dbcf}.container.h
 :root{--sj-font:"Noto Serif TC","Songti TC","PMingLiU",serif;--sj-heading:var(--sj-font)}
 html,body,header,nav,footer,main,section,article,aside,div,p,span,a,li,td,th,label,small,strong,b,h1,h2,h3,h4,h5,h6,summary,button,input,select,textarea,option{font-family:var(--sj-font)!important}
 button,input,select,textarea{font-size:inherit}
+
+/* Header aligned with the home page */
+header{background:#fffdf9;border-bottom:1px solid #e8dbcf;padding:0}
+.sj-site-nav{max-width:1100px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:12px 20px}
+.sj-site-nav .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-size:16px;font-weight:750;letter-spacing:0;color:#803d50;white-space:nowrap}
+.sj-site-nav .brand img{width:42px;height:42px;object-fit:contain}
+.sj-site-links{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;align-items:center}
+.sj-site-links a{text-decoration:none;color:inherit}
+.sj-site-links a:hover{text-decoration:underline}
+@media(max-width:700px){.sj-site-nav{flex-wrap:wrap}.sj-site-links{gap:12px}}
 </style>
 <style id="nutrition-tables-polish">
 .nutrition-inner{padding:0 18px 20px}
@@ -138,7 +148,7 @@ body h1,body h2,body h3,body h4,body h5,body h6,.brand-product-title{font-family
 @media(max-width:700px){.sj-top-nav-inner{flex-wrap:wrap!important;gap:5px!important;padding:8px 12px!important;}.sj-nav-links{flex-basis:100%!important;width:100%!important;justify-content:flex-end!important;overflow-x:auto!important;}.sj-nav-links a,.sj-nav-links button{font-size:.83rem!important;padding:8px 9px!important;}}
 header .container{width:100%!important;max-width:none!important;margin:0!important;padding:0 clamp(14px,2.2vw,36px)!important;}.header-row{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;}.brand{font-family:var(--sj-font)!important;font-weight:800!important;}.top-links{margin-left:auto!important;justify-content:flex-end!important;font-family:var(--sj-font)!important;font-weight:700!important;}@media(max-width:700px){.header-row{flex-wrap:wrap!important;}.top-links{width:100%!important;justify-content:flex-end!important;}}</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap" rel="stylesheet"></head>
 <body>
-<header><div class="container header-row"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><nav class="top-links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a class="order" href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a></nav></div></header>
+<header><nav class="sj-site-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="sj-site-links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header>
 <main class="container">
 <section class="hero">
 <div class="eyebrow">STILL JI · OUR PASTRIES</div>
