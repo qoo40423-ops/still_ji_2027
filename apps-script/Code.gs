@@ -817,14 +817,17 @@ function testOverdueSafetyRules2027(){
     v[13]=payment;v[14]=remit;v[16]=status;return v;
   }
   const cases=[
-    {name:'未滿72小時但期限被提前',v:row(1,24,'未付款','待確認',''),want:'protected'},
+    {name:'未滿72小時且截止時間已過但早於成立（資料異常）',
+      v:row(1,24,'未付款','待確認',''),want:'warning'},
     {name:'滿72小時且期限已過',v:row(96,24,'未付款','待確認',''),want:'candidate'},
     {name:'已填匯款後五碼',v:row(96,24,'未付款','待確認','12345'),want:'protected'},
     {name:'待核帳保護',v:row(96,24,'待核帳','待確認',''),want:'protected'},
     {name:'已付款保護',v:row(96,24,'已付款','已確認',''),want:'protected'},
     {name:'期限延長尚未到',v:row(96,-24,'未付款','待確認',''),want:'protected'},
     {name:'已取消不重複',v:row(96,24,'逾期未付','已取消',''),want:'protected'},
-    {name:'成立時間缺失中止',v:row(96,24,'未付款','待確認',''),want:'warning'}
+    {name:'成立時間缺失中止',v:row(96,24,'未付款','待確認',''),want:'warning'},
+    {name:'未滿72小時且正常截止時間未到',v:row(1,-71,'未付款','待確認',''),want:'protected'},
+    {name:'成立滿72小時但截止時間尚未到',v:row(80,-2,'未付款','待確認',''),want:'protected'}
   ];
   cases[7].v[1]='';
   const results=cases.map(x=>{
@@ -834,7 +837,7 @@ function testOverdueSafetyRules2027(){
   const result={mode:'PURE SIMULATION NO SHEET ACCESS',
     passed:results.every(x=>x.pass),passedCount:results.filter(x=>x.pass).length,
     total:results.length,results};
-  Logger.log('===== S-08A 72小時與匯款保護測試 =====');
+  Logger.log('===== S-08A 修正版 72小時與匯款保護測試 =====');
   Logger.log(JSON.stringify(result));return result;
 }
 
