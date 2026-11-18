@@ -477,3 +477,45 @@ function removeOverdueHourlyTrigger2027(){
   Logger.log('===== S-10B 已移除 TEST 逾期排程 =====');
   Logger.log(JSON.stringify(result));return result;
 }
+
+
+/**
+ * 自取匯款回報｜TEST 後端核心（尚未公開 HTTP 端點）。
+ * 僅由受信任的伺服器端入口呼叫，勿直接開放匿名寫入。
+ * 只更新門市自取 N/O 欄；P 核帳日期留給人工核帳。
+ */
+function submitPickupRemittance2027(data){
+  if(!data||typeof data!=='object')throw Error('回報資料不完整');
+  const orderId=String(data.orderId||'').trim().toUpperCase();
+  const phone=sjPhone_(data.phone);
+  const last5=String(data.last5||'').trim();
+  if(!/^SJ27-[0-9]{6}-[A-F0-9]{8}$/.test(orderId))throw Error('訂單編號格式不正確');
+  if(!/^\\d{5}$/.test(last5)||last5==='88888')throw Error('請填寫有效的匯款帳號後五碼');
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('目前系統忙碌，請稍後再試');
+  try{
+    const sh=sjSheet_(SJ27.PICKUP),last=sh.getLastRow();
+    if(last<2)throw Error('無法核對訂單資料');
+    const rows=sh.getRange(2,1,last-1,18).getValues();
+    const matches=rows.map((v,i)=>({v,row:i+2})).filter(x=>String(x.v[0]||'').trim().toUpperCase()===orderId);
+    if(matches.length!==1)throw Error('無法核對訂單資料');
+    const hit=matches[0],v=hit.v;
+    if(sjPhone_(v[5])!==phone)throw Error('無法核對訂單資料');
+    const payment=String(v[13]||'').trim(),status=String(v[16]||'').trim();
+    if(!sjStatusActive_(status))throw Error('訂單目前無法回報，請聯繫店家');
+    if(payment==='待核帳'&&String(v[14]||'').trim()===last5)
+      return {ok:true,alreadySubmitted:true,message:'這筆匯款資料已收到，請等待店家核帳'};
+    if(payment!=='未付款')throw Error('訂單目前無法回報，請聯繫店家');
+    if(String(v[14]||'').trim())throw Error('已有匯款資料，請聯繫店家確認');
+    const now=Date.now(),created=v[1],deadline=v[12];
+    if(!(created instanceof Date)||!(deadline instanceof Date)||
+       !Number.isFinite(created.getTime())||!Number.isFinite(deadline.getTime())||
+       now>=created.getTime()+SJ27.PAY_HOURS*3600000||now>=deadline.getTime())
+      throw Error('付款回報期限已過，請聯繫店家');
+    sh.getRange(hit.row,15).setNumberFormat('@').setValue(last5);
+    sh.getRange(hit.row,14).setValue('待核帳');
+    SpreadsheetApp.flush();
+    Logger.log(JSON.stringify({event:'PICKUP_REMITTANCE_SUBMITTED',row:hit.row,orderId}));
+    return {ok:true,alreadySubmitted:false,message:'已收到匯款回報，請等待店家核帳'};
+  }finally{lock.releaseLock();}
+}
