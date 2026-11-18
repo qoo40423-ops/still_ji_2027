@@ -105,6 +105,10 @@ function mgrNewOrder2027(o){
  values=[id,created,date,slot,name,phone,six,fifteen,pieces,goods,'一般售價',goods,deadline,payment,paid?'88888':'',verified,status,note+' [收款:'+ (paid?o.payMethod:'待付款')+'] '+tag];
  }else{
  if([0,6].includes(new Date(date+'T00:00:00Z').getUTCDay()))throw Error('週末不提供宅配出貨');
+ const invoiceType=String(o.invoiceType||'一般發票').trim(),taxId=String(o.taxId||'').trim();
+ if(!['一般發票','公司發票'].includes(invoiceType))throw Error('發票類型不正確');
+ if(invoiceType==='公司發票'&&!/^\d{8}$/.test(taxId))throw Error('公司發票請填寫8碼統一編號');
+ const invoiceNote=invoiceType==='公司發票'?'[發票:公司／統編:'+taxId+']':'[發票:一般]';
  const address=mgrText_(o.address,200,'地址');if(address.length<8||/^(澎湖|金門|連江|馬祖|小琉球|綠島|蘭嶼)/.test(address))throw Error('請填寫台灣本島完整地址');
  const four=mgrInt_(o.four||0,'4盒組'),ten=mgrInt_(o.ten||0,'10盒組'),group=mgrInt_(o.group||0,'15盒組'),bags=mgrInt_(o.bags||0,'提袋');
  if(fifteen>0&&fifteen<4)throw Error('15入宅配至少4盒');if(bags>0&&!group)throw Error('提袋僅限6入15盒組');
@@ -113,7 +117,7 @@ function mgrNewOrder2027(o){
  const goods=sixBoxes*300+fifteen*750,bagFee=bags*20,cartons15=Math.ceil(fifteen/10),shipping=four*150+ten*170+split.reduce((a,n)=>a+(n>=5?210:170),0)+cartons15*210;
  const remote=/^(宜蘭縣|宜蘭市|花蓮縣|臺東縣|台東縣)/.test(address.replace(/\s/g,''))?(four+ten+group+cartons15)*10:0;
  sh=ss.getSheetByName('宅配到府');phoneCol=5;deadlineCol=18;
- values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
+ values=[id,created,date,name,phone,address,four,ten,group,fifteen,bags,pieces,goods,bagFee,shipping,remote,goods+bagFee+shipping+remote,deadline,payment,'',verified,'待回傳','',status,note+' '+invoiceNote+' [收款:'+(paid?o.payMethod:'待付款')+'] '+tag];
  }
  if(!sh)throw Error('找不到訂單工作表');if(pieces>4800||mgrUsage_(ss,date)+pieces>4800)throw Error('一般訂單已超過每日 4800 顆上限');
  const row=sh.getLastRow()+1;sh.getRange(row,phoneCol).setNumberFormat('@');sh.getRange(row,1,1,values.length).setValues([values]);sh.getRange(row,2).setNumberFormat('yyyy/mm/dd hh:mm');sh.getRange(row,deadlineCol).setNumberFormat('yyyy/mm/dd hh:mm');
