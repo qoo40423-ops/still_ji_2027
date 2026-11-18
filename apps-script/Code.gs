@@ -176,3 +176,31 @@ function testCreatePickup2027(){
 function testCreateDelivery2027(){
   return createOrder2027({method:'宅配',name:'測試客人',phone:'0912345678',address:'彰化縣彰化市三民路402-2號',date:'2027-09-02',four:1,ten:0,fifteenGroup:0,fifteenBoxes:0,bags:0,notes:'TEST 測試資料',requestId:'TEST-DELIVERY-2027-0001'});
 }
+
+/**
+ * 付款管理 S-02：唯讀逾期報告。
+ * 不取消訂單、不改付款狀態、不寄 LINE、不釋放產能。
+ * 待核帳、已付款、退款中等情況全部交由人工複核。
+ */
+function paymentAudit2027(){
+  const now=new Date(),report={checkedAt:Utilities.formatDate(now,SJ27.TZ,'yyyy/MM/dd HH:mm'),summary:{orders:0,overdueUnpaid:0,manualReview:0,paid:0,invalidDeadline:0},overdue:[],review:[]};
+  for(const spec of [{name:SJ27.PICKUP,deadline:12,payment:13,status:16},{name:SJ27.DELIVERY,deadline:17,payment:18,status:23}]){
+    const sh=sjSheet_(spec.name);
+    const rows=sjDataRows_(spec.name);
+    rows.forEach((r,i)=>{
+      const id=String(r[0]||'').trim(),payment=String(r[spec.payment]||'').trim(),status=String(r[spec.status]||'').trim();
+      const raw=r[spec.deadline],deadline=raw instanceof Date?raw:new Date(raw);
+      report.summary.orders++;
+      if(!Number.isFinite(deadline.getTime())){report.summary.invalidDeadline++;report.review.push({sheet:spec.name,orderId:id,reason:'付款截止時間無效'});return;}
+      if(['已付款','已退款'].includes(payment)){report.summary.paid++;return;}
+      if(!sjStatusActive_(status))return;
+      if(now<=deadline)return;
+      const item={sheet:spec.name,row:i+2,orderId:id,paymentStatus:payment,orderStatus:status,deadline:Utilities.formatDate(deadline,SJ27.TZ,'yyyy/MM/dd HH:mm')};
+      if(payment==='未付款'&&status==='待付款'){report.summary.overdueUnpaid++;report.overdue.push(item);}
+      else{report.summary.manualReview++;report.review.push({...item,reason:'逾期但付款或訂單狀態需人工確認'});}
+    });
+  }
+  Logger.log(JSON.stringify(report));return report;
+}
+/** 只執行唯讀付款稽核，測試階段請先使用這個。 */
+function testPaymentAudit2027(){return paymentAudit2027();}
