@@ -141,13 +141,4 @@ function confirmPayment(kind,id){const order=data&&data[kind]&&data[kind].find(o
  google.script.run.withSuccessHandler(r=>{alert(r.already?'這筆訂單先前已標記為已取貨':'已更新為「已取貨」');load()}).withFailureHandler(e=>{alert('更新失敗：'+e.message);load()}).markPickupCollected2027(id);
 }
 load();
-</script></body></html>+order.amount+'？\\n訂單：'+id+'\\n請確認銀行入帳後再按確定。'))return;$('message').textContent='正在更新付款狀態…';document.querySelectorAll('button.collect').forEach(b=>b.disabled=true);google.script.run.withSuccessHandler(r=>{alert(r.already?'這筆訂單已經是已付款':'已確認收款：'+id);load()}).withFailureHandler(e=>{alert('核帳失敗：'+e.message);load()}).mgrConfirmPayment2027(kind,id)}
-function collect(id){
- const order=data&&data.pickup.find(o=>o.id===id);if(!order)return;
- if(!confirm('確認「'+order.name+'」的訂單 '+id+' 已由客人取走？\\n確定後會更新試算表的訂單狀態。'))return;
- $('message').textContent='正在更新取貨狀態…';
- document.querySelectorAll('button.collect').forEach(b=>b.disabled=true);
- google.script.run.withSuccessHandler(r=>{alert(r.already?'這筆訂單先前已標記為已取貨':'已更新為「已取貨」');load()}).withFailureHandler(e=>{alert('更新失敗：'+e.message);load()}).markPickupCollected2027(id);
-}
-load();
 </script></body></html>
