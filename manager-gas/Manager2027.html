@@ -40,7 +40,7 @@ function submitNew(){
  if(!payload.name||!payload.phone||!payload.date){$('newMsg').textContent='請填寫姓名、電話與日期';return}
  if(!confirm('確認建立'+kind+'訂單？付款狀態：'+(paid?'現場已收款（'+payload.payMethod+'）':'待付款')+'。'))return;
  newRequest=payload.requestId;newBusy=true;$('newSubmit').disabled=true;$('newMsg').textContent='正在建立訂單…';
- google.script.run.withSuccessHandler(res=>{newBusy=false;newRequest='';const entry=$('results').querySelector('.entry');if(entry){entry.insertAdjacentHTML('afterbegin','<div class="card" role="status"><strong>建立成功：'+esc(res.orderId)+'</strong>｜金額 NT(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
+ google.script.run.withSuccessHandler(res=>{newBusy=false;newRequest='';renderNew();$('newMsg').textContent='上一筆建立成功：'+res.orderId+'｜金額 NT$'+res.amount+(res.duplicate?'（重複送單，未再次建立）':'')+'。可繼續填寫下一筆訂單。';}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
 }
 function renderVip(){
  const list=data.vip||[];
