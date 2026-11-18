@@ -715,3 +715,86 @@ function applyBatchOverdueTest2027(){
     return result;
   }finally{lock.releaseLock();}
 }
+
+/**
+ * S-07｜通用逾期取消（手動執行；尚未安裝定時觸發器）。
+ * 安全設計：
+ * 1. ScriptLock 下重新讀取當前資料；不依賴先前預覽結果。
+ * 2. 只處理付款狀態「未付款／逾期未付」且訂單「待確認」。
+ * 3. 若任何訂單資料異常，整批停止、不寫入。
+ * 4. 已付款、待核帳、退款、已取消、其他非待確認狀態不處理。
+ * 5. 完成後從有效訂單重算產能；不刪除歷史資料。
+ * 注意：試算表寫入不是交易；若中途失敗，重新執行前須人工檢查。
+ */
+function applyOverdueAll2027(){
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('S-07 系統忙碌，未執行');
+  try{
+    const now=Date.now(),specs=[
+      {name:SJ27.PICKUP,pay:14,status:17,deadline:13,pieces:9,width:18},
+      {name:SJ27.DELIVERY,pay:19,status:24,deadline:18,pieces:12,width:25}
+    ];
+    const pending=[],warnings=[],protectedOrders=[];
+    for(const t of specs){
+      const sh=sjSheet_(t.name),last=sh.getLastRow();
+      if(last<2)continue;
+      const rows=sh.getRange(2,1,last-1,t.width).getValues();
+      for(let i=0;i<rows.length;i++){
+        const v=rows[i],id=String(v[0]||'').trim();
+        if(!id)continue;
+        const payment=String(v[t.pay-1]||'').trim();
+        const status=String(v[t.status-1]||'').trim();
+        if(!['未付款','逾期未付'].includes(payment)||
+           status!=='待確認'){
+          protectedOrders.push({sheet:t.name,id});continue;
+        }
+        const deadline=v[t.deadline-1],date=sjDateValue_(v[2]);
+        const pieces=Number(v[t.pieces-1]);
+        if(!(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
+           !/^2027-(08|09)-\d{2}$/.test(date)||
+           !Number.isSafeInteger(pieces)||pieces<=0){
+          warnings.push({sheet:t.name,row:i+2,id,reason:'截止日期、製作日期或顆數異常'});
+          continue;
+        }
+        if(deadline.getTime()>=now)continue;
+        pending.push({sh,t,row:i+2,id,date,pieces});
+      }
+    }
+    // 有任何不明資料時整批停止，避免部分取消。
+    if(warnings.length){
+      const result={mode:'ABORT NO WRITE',warnings,candidateCount:pending.length};
+      Logger.log('===== S-07 安全中止 =====');
+      Logger.log(JSON.stringify(result));return result;
+    }
+    // 再確認唯一訂單 ID，避免誤改。
+    const ids=pending.map(x=>x.id);
+    if(new Set(ids).size!==ids.length)throw Error('候選訂單 ID 重複，已停止');
+    const before={};
+    pending.forEach(x=>{if(!(x.date in before))before[x.date]=sjUsage_(x.date).total;});
+    for(const x of pending){
+      x.sh.getRange(x.row,x.t.pay).setValue('逾期未付');
+      x.sh.getRange(x.row,x.t.status).setValue('已取消');
+    }
+    if(pending.length){
+      SpreadsheetApp.flush();
+      refreshCapacitySummary2027_();
+    }
+    const releaseByDate={},capacityChecks={};
+    for(const date of Object.keys(before)){
+      const after=sjUsage_(date).total;
+      const expected=pending.filter(x=>x.date===date).reduce((n,x)=>n+x.pieces,0);
+      releaseByDate[date]=before[date]-after;
+      capacityChecks[date]={before:before[date],after,released:releaseByDate[date],
+        expected,pass:releaseByDate[date]===expected};
+    }
+    const result={mode:'MANUAL WRITE',cancelledCount:pending.length,
+      cancelled:pending.map(x=>({sheet:x.t.name,row:x.row,id:x.id,pieces:x.pieces})),
+      protectedCount:protectedOrders.length,releaseByDate,capacityChecks,
+      passed:Object.values(capacityChecks).every(x=>x.pass),
+      note:'S-07 未安裝定時觸發器；僅手動執行'};
+    Logger.log('===== S-07 通用逾期取消（手動） =====');
+    Logger.log(JSON.stringify(result));
+    if(!result.passed)throw Error('S-07 產能驗證不符，請人工檢查');
+    return result;
+  }finally{lock.releaseLock();}
+}
