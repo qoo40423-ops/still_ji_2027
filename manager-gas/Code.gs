@@ -1,0 +1,18 @@
+/** 紀家烘焙坊 116 中秋｜獨立管理 GAS（TEST）
+ * 請建立另一個 Apps Script 專案，部署為「執行身分：我／存取權：只有自己」。
+ * 不要貼到既有公開匯款回報的 Code.gs。
+ */
+const MANAGER_TEST_SHEET_ID='1kL2ZO0O-rNoR6UsepheMV84_9YtY7fdk4UFKDhMt4W4';
+const MANAGER_TZ='Asia/Taipei';
+function doGet(){return HtmlService.createHtmlOutputFromFile('Manager2027').setTitle('紀家烘焙坊｜中秋管理').addMetaTag('viewport','width=device-width, initial-scale=1');}
+function managerSnapshot2027(){
+ const ss=SpreadsheetApp.openById(MANAGER_TEST_SHEET_ID);
+ const get=(name,n)=>{const sh=ss.getSheetByName(name);if(!sh)throw Error('缺少工作表：'+name);return sh.getLastRow()<2?[]:sh.getRange(2,1,sh.getLastRow()-1,n).getValues().filter(r=>String(r[0]||'').trim());};
+ const stamp=v=>v instanceof Date?Utilities.formatDate(v,MANAGER_TZ,'yyyy/MM/dd HH:mm'):String(v==null?'':v);
+ const day=v=>v instanceof Date?Utilities.formatDate(v,MANAGER_TZ,'yyyy-MM-dd'):String(v||'').trim();
+ const pickup=get('門市自取',18).map(v=>({type:'自取',id:String(v[0]),date:day(v[2]),slot:stamp(v[3]),name:String(v[4]),phone:String(v[5]),quantity:'6入×'+v[6]+'、15入×'+v[7],pieces:Number(v[8])||0,amount:Number(v[11])||0,deadline:stamp(v[12]),payment:String(v[13]),remittance:String(v[14]||''),verified:stamp(v[15]),status:String(v[16]),note:String(v[17]||'')}));
+ const delivery=get('宅配到府',25).map(v=>({type:'宅配',id:String(v[0]),date:day(v[2]),slot:'出貨',name:String(v[3]),phone:String(v[4]),address:String(v[5]),quantity:'4盒組×'+v[6]+'、10盒組×'+v[7]+'、15盒組×'+v[8]+'、15入×'+v[9],pieces:Number(v[11])||0,amount:Number(v[16])||0,deadline:stamp(v[17]),payment:String(v[18]),remittance:String(v[19]||''),verified:stamp(v[20]),slipConfirmation:String(v[21]||''),tracking:String(v[22]||''),status:String(v[23]),note:String(v[24]||'')}));
+ const map={};pickup.concat(delivery).forEach(o=>{if(['已取消','取消','作廢'].includes(o.status))return;const x=map[o.date]||(map[o.date]={date:o.date,pickup:0,delivery:0});x[o.type==='自取'?'pickup':'delivery']+=o.pieces;});
+ const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(x=>({...x,total:x.pickup+x.delivery,pans:Math.ceil((x.pickup+x.delivery)/60),remaining:Math.max(0,4800-x.pickup-x.delivery),limit:4800}));
+ return {generatedAt:stamp(new Date()),pickup,delivery,capacity,counts:{pickup:pickup.length,delivery:delivery.length,pendingReview:pickup.concat(delivery).filter(o=>o.payment==='待核帳').length,unpaid:pickup.concat(delivery).filter(o=>o.payment==='未付款'&&!['已取消','取消','作廢'].includes(o.status)).length}};
+}
