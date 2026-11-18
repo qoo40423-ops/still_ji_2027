@@ -97,7 +97,7 @@ function renderCalendar(){
  const row=(title,x)=>'<div><strong>'+title+'：</strong>'+fmt(x)+'</div>';
  $('results').innerHTML='<div class="detail"><div class="total">'+esc(d.date.slice(5).replace('-','/'))+'（'+weekday(d.date)+'）合計 '+d.pans+' 盤</div><div class="muted">共 '+d.total+' 顆／上限 '+d.limit+' 顆，剩餘 '+d.remaining+' 顆</div><hr>'+row('上午製作（含宅配）',d.morning)+row('下午製作',d.afternoon)+'</div>'+
  '<div class="detail"><h3>門市自取｜'+d.pickup.pans+' 盤</h3><div>'+fmt(d.pickup)+'</div><hr>'+pickupSlotRows(d)+(d.unclassified.pieces?'<p class="muted">未分類時段：'+fmt(d.unclassified)+'（請檢查 D 欄）</p>':'')+'</div>'+
- '<div class="detail"><h3>宅配合計（全部計入上午）</h3>'+fmt(d.delivery)+'</div>';
+ '<div class="detail"><h3>宅配合計（全部計入上午）</h3>'+fmt(d.delivery)+'</div>'+(d.vip?'<div class="detail"><h3>老闆 VIP 公關單</h3>'+fmt(d.vip)+'</div>':'');
 }
 
 function collect(id){
@@ -108,7 +108,7 @@ function collect(id){
  google.script.run.withSuccessHandler(r=>{alert(r.already?'這筆訂單先前已標記為已取貨':'已更新為「已取貨」');load()}).withFailureHandler(e=>{alert('更新失敗：'+e.message);load()}).markPickupCollected2027(id);
 }
 load();
-</script></body></html>+res.amount+(res.duplicate?'（重複送單，未再次建立）':'');$('newSubmit').disabled=true;newRequest='';data=null;}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
+</script></body></html>+res.amount+(res.duplicate?'（重複送單，未再次建立）':'');$('newSubmit').disabled=true;newRequest='';}).withFailureHandler(e=>{newBusy=false;$('newSubmit').disabled=false;$('newMsg').textContent='建立失敗：'+e.message}).mgrNewOrder2027(payload);
 }
 function renderVip(){
  const list=data.vip||[];
