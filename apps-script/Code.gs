@@ -650,3 +650,68 @@ function setupBatchOverdueTestOrders2027(){
     note:'尚未取消任何訂單；請先檢查兩筆資料及 READ ONLY 預演'}));
   return results;
 }
+
+/**
+ * S-06C 第二階段｜僅取消兩筆指定 RID 的 TEST 訂單。
+ * 不處理其他逾期訂單；每次重新讀取最新狀態，避免重複取消。
+ * 若任一筆不符合條件則整批停止，不先寫入。
+ */
+function applyBatchOverdueTest2027(){
+  const targets=[
+    {sheet:SJ27.PICKUP,rid:'[RID:TEST-S06C-PICKUP-2027-0001]',id:'SJ27-261118-0021D4E8',
+      paymentCol:14,statusCol:17,deadlineCol:13,piecesCol:9,expectedPieces:48},
+    {sheet:SJ27.DELIVERY,rid:'[RID:TEST-S06C-DELIVERY-2027-0001]',id:'SJ27-261118-400CCA66',
+      paymentCol:19,statusCol:24,deadlineCol:18,piecesCol:12,expectedPieces:24}
+  ];
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000))throw Error('S-06C 系統忙碌，未執行');
+  try{
+    const now=Date.now(),prepared=[],alreadyCancelled=[];
+    for(const t of targets){
+      const sh=sjSheet_(t.sheet),last=sh.getLastRow();
+      if(last<2)throw Error('找不到測試訂單：'+t.sheet);
+      const width=t.sheet===SJ27.PICKUP?18:25;
+      const rows=sh.getRange(2,1,last-1,width).getValues();
+      const found=rows.map((v,i)=>({v,row:i+2}))
+        .filter(x=>String(x.v[width-1]||'').includes(t.rid));
+      if(found.length!==1)throw Error('測試單 RID 不唯一或不存在：'+t.sheet);
+      const {v,row}=found[0];
+      const id=String(v[0]||'').trim(),payment=String(v[t.paymentCol-1]||'').trim();
+      const status=String(v[t.statusCol-1]||'').trim();
+      const deadline=v[t.deadlineCol-1],pieces=Number(v[t.piecesCol-1]);
+      const date=sjDateValue_(v[2]);
+      if(id!==t.id||pieces!==t.expectedPieces||date!=='2027-09-06')
+        throw Error('測試單識別、數量或日期不符，全部停止：'+t.sheet);
+      if(payment==='逾期未付'&&status==='已取消'){
+        alreadyCancelled.push({sheet:t.sheet,id,row});continue;
+      }
+      if(!['未付款','逾期未付'].includes(payment)||
+         !['待確認','待付款'].includes(status)||
+         !(deadline instanceof Date)||!Number.isFinite(deadline.getTime())||
+         deadline.getTime()>=now)
+        throw Error('測試單付款、狀態或截止時間不符，全部停止：'+t.sheet);
+      prepared.push({sh,t,row,id,pieces,date});
+    }
+    if(prepared.length!==0&&prepared.length!==2)
+      throw Error('偵測到部分測試單已取消、部分未取消，為避免部分寫入，請人工檢查');
+    const before=sjUsage_('2027-09-06').total;
+    if(prepared.length===2){
+      for(const x of prepared){
+        x.sh.getRange(x.row,x.t.paymentCol).setValue('逾期未付');
+        x.sh.getRange(x.row,x.t.statusCol).setValue('已取消');
+      }
+      SpreadsheetApp.flush();
+      refreshCapacitySummary2027_();
+    }
+    const after=sjUsage_('2027-09-06').total;
+    const released=before-after;
+    const result={mode:'WRITE TEST ONLY',cancelled:prepared.map(x=>({sheet:x.t.sheet,id:x.id,pieces:x.pieces})),
+      alreadyCancelled,capacityBefore:before,capacityAfter:after,released,
+      expectedReleased:prepared.reduce((sum,x)=>sum+x.pieces,0),
+      capacityMatches:released===prepared.reduce((sum,x)=>sum+x.pieces,0)};
+    Logger.log('===== S-06C 專用兩筆批次取消測試 =====');
+    Logger.log(JSON.stringify(result));
+    if(!result.capacityMatches)throw Error('產能差額不符，請檢查 TEST 統計表');
+    return result;
+  }finally{lock.releaseLock();}
+}
