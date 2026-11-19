@@ -67,7 +67,17 @@ function calendar(){const grid=$("calendarDays");grid.textContent="";$("monthTit
 const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
 for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";grid.append(blank);}
 for(let day=1;day<=max;day++){const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0"),b=document.createElement("button");b.type="button";b.className="day"+(date===selected?" selected":"");b.textContent=day;b.disabled=date>"2027-09-15";b.setAttribute("aria-label",date+(b.disabled?" 不可選":""));b.addEventListener("click",()=>{selected=date;updatePickupSlots();calendar();calc();if(date==="2027-09-15")alert("中秋節當天請於上午 10:00 前完成取件。逾時未取件視同取消，並安排退款事宜。");});grid.append(b);}}
-function updatePickupSlots(){const select=$("pickupTime"),special=selected==="2027-09-15",weekend=selected&&[0,6].includes(new Date(selected+"T00:00:00Z").getUTCDay());for(const opt of select.options){if(!opt.value)continue;opt.disabled=special?opt.value!=="09:00–10:00":opt.value==="09:00–10:00"||(opt.value==="09:00–12:00"&&!weekend)}if(select.selectedOptions[0]?.disabled||special&&select.value!=="09:00–10:00")select.value=special?"09:00–10:00":"";$("pickupSlotHelp").textContent=special?"9/15 特別時段：上午 09:00–10:00，請於 10:00 前取件。":weekend?"週末開放 09:00–12:00 及三個下午時段，恕無法提前取貨。":"平日僅開放 13:00–15:00、15:00–17:00、17:00–18:00，恕無法提前取貨。"}
+function updatePickupSlots(){
+const select=$("pickupTime"),previous=select.value;
+const special=selected==="2027-09-15";
+const weekend=Boolean(selected)&&[0,6].includes(new Date(selected+"T00:00:00Z").getUTCDay());
+const slots=!selected?[]:special?[["09:00–10:00","09:00–10:00（9/15 特別時段）"]]:[...(weekend?[["09:00–12:00","09:00–12:00"]]:[]),["13:00–15:00","13:00–15:00"],["15:00–17:00","15:00–17:00"],["17:00–18:00","17:00–18:00"]];
+select.replaceChildren();
+const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent=selected?"請選擇提貨時段":"請先選擇日期";select.append(placeholder);
+slots.forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;select.append(option);});
+select.value=slots.some(([value])=>value===previous)?previous:"";
+$("pickupSlotHelp").textContent=!selected?"請先選擇日期，再選擇可預約的取貨時段。":special?"9/15 特別時段：上午 09:00–10:00，請於 10:00 前取件。":weekend?"週末開放 09:00–12:00 及三個下午時段，恕無法提前取貨。":"平日僅開放 13:00–15:00、15:00–17:00、17:00–18:00，恕無法提前取貨。";
+}
 function row(label,value,grand){const div=document.createElement("div");div.className="sumrow"+(grand?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;div.append(a,b);$("totals").append(div);}
 function calc(){const staffPreview=$("pickupNote").value.trim()==="8888";$("staffPriceNotice").hidden=!staffPreview;const a=Number($("six").value),b=Number($("fifteen").value),warnings=[];$("totals").textContent="";
 if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("蛋黃酥總數",pieces+" 顆");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)).toLocaleString("zh-TW"),true);
