@@ -30,6 +30,7 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <section class="panel"><form id="remittanceForm" autocomplete="on">
 <div class="field"><label for="orderId">訂單編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="SJ-58321（舊訂單也適用）" autocomplete="off"><div class="hint">請輸入訂單成立時取得的編號。</div></div>
 <div class="field"><label for="phone">訂購聯絡電話</label><input id="phone" name="phone" type="tel" maxlength="30" required placeholder="請輸入訂購時填寫的電話" autocomplete="tel"></div>
+<div class="field"><label for="transferDate">匯款日期</label><input id="transferDate" name="transferDate" type="date" required><div class="hint">請選擇實際完成轉帳的日期，方便店家核對銀行入帳紀錄。</div></div>
 <div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
 <div class="note">回報後將由店家人工核對款項；送出不代表已付款成功。<br>門市現金付款不適用本表單，宅配訂單請依原流程確認宅配單。</div>
 <input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>匯款回報（測試版尚未開放送出）</button><div id="status" role="status" aria-live="polite">目前為 TEST 介面展示，尚未連接公開回報服務，資料不會送出。</div>
@@ -42,6 +43,10 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <script>
 const form=document.getElementById('remittanceForm');
 const last5=document.getElementById('last5');
+const transferDate=document.getElementById('transferDate');
+const localToday=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
+transferDate.max=localToday();
+
 last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').slice(0,5)});
 // 完成 TEST Web App 部署與安全驗收後，才填入部署網址並開啟。
 const TEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
