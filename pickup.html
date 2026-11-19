@@ -96,7 +96,7 @@ $("pickupSlotHelp").textContent=!selected?"請先選擇日期，再選擇可預�
 }
 function row(label,value,grand){const div=document.createElement("div");div.className="sumrow"+(grand?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;div.append(a,b);$("totals").append(div);}
 function calc(){const staffPreview=$("pickupNote").value.trim()==="8888";$("staffPriceNotice").hidden=!staffPreview;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
-if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("蛋黃酥總數",pieces+" 顆");row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
+if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
 if(pieces>4800)warnings.push("本筆訂單超過每日 4,800 顆上限");
 if(pieces>0&&((a>0&&b>0&&pieces<42)||(a>0&&b===0&&a<8)||(b>0&&a===0&&b<3)))warnings.push("未達訂單最小數量標準，僅能現場購買，敬請見諒");
 if(!pieces)warnings.push("請選擇商品數量");if(bags>0)warnings.push("不織布提袋加購尚待後端同步，目前無法送出含提袋的訂單");
