@@ -113,6 +113,20 @@ $("prevMonth").addEventListener("click",()=>{month=8;calendar();});$("nextMonth"
 /* 主管展示版：公開 TEST 收單須完成 GAS 部署、安全驗收後，才可設定 endpoint。 */
 const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 let sj27RequestId='';
+let sj27OrderSubmitting=false;
+const sj27SubmissionKey='sj27-order-submit-pickup';
+function sj27OrderGuard(x){
+  const signature=JSON.stringify(x);
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(sj27SubmissionKey)||'null');
+    if(saved&&saved.signature===signature&&Date.now()-saved.time<120000)return false;
+  }catch(e){}
+  if(sj27OrderSubmitting)return false;
+  sj27OrderSubmitting=true;
+  try{sessionStorage.setItem(sj27SubmissionKey,JSON.stringify({signature,time:Date.now()}));}catch(e){}
+  return true;
+}
+
 function SJ27_REVIEW_ROWS(x){const a=Number(x.six),b=Number(x.fifteen),bags=Number(x.bags);return [['提貨人姓名',x.name],['提貨人手機',x.phone],['提貨日期',x.date],['取貨時段',x.slot],['訂單內容',[a?'6入 × '+a+'盒':'',b?'15入 × '+b+'盒':'',bags?'不織布提袋 × '+bags+'個':''].filter(Boolean).join('、')],['備註',x.notes||'無'],['訂單總金額','NT$ '+(a*300+b*750+bags*20).toLocaleString('zh-TW')]]}
 function sj27DemoSubmit(){const msg=$('sj27SendMsg');if(!SJ27_ORDER_ENDPOINT){msg.textContent='訂單服務暫時無法使用';return}const x=SJ27_COLLECT();if(!x.name.trim()||!x.phone.trim()||!x.date||!x.slot){msg.textContent='請完整填寫訂購資料';return}if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂購資料：'+$('warnings').textContent;return}const details=$('sj27ReviewDetails');details.textContent='';try{SJ27_REVIEW_ROWS(x).forEach(([label,value])=>{const div=document.createElement('div'),a=document.createElement('strong'),b=document.createElement('span');div.className='review-row';a.textContent=label;b.textContent=String(value||'—');div.append(a,b);details.append(div)})}catch(e){msg.textContent='無法計算訂單金額，請檢查資料';return}$('sj27Review').showModal()}
 
@@ -121,7 +135,7 @@ const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value
 
 
 $('sj27ReviewBack').addEventListener('click',()=>$('sj27Review').close());
-$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');btn.disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);form.submit();form.remove();$('sj27Review').close();btn.disabled=false;msg.textContent='訂單結果已在新分頁開啟，請確認是否顯示「訂單成立成功」。若未看到結果，請先查詢訂單，勿重複送出。';});
+$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);form.submit();form.remove();$('sj27Review').close();msg.textContent='訂單結果已在新分頁開啟，請確認是否顯示「訂單成立成功」。若未看到結果，請先查詢訂單，勿重複送出。';});
 </script><script id="sj-pickup-hover-preview">
 (function(){
 const panel=document.getElementById("sjPickupPreview"),img=document.getElementById("sjPickupPreviewImage"),name=document.getElementById("sjPickupPreviewName"),desc=document.getElementById("sjPickupPreviewDesc");
