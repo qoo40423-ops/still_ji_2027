@@ -64,7 +64,7 @@ const note=document.createElement("p");note.className="notice";note.textContent=
 }
 function search(){
 const q=input.value.trim();if(!q){show("請先輸入手機號碼或訂單編號。");input.focus();return;}
-const normalized=q.replace(/[\s()－]/g,"").replace(/-/g,"");
+const normalized=/^SJ[-－]?[A-Za-z0-9]+$/i.test(q)?q.replace(/－/g,"-").replace(/^SJ(?!-)/i,"SJ-").toUpperCase():q.replace(/[\s()－]/g,"").replace(/-/g,"");
 if(!(/^(?:09\d{8}|0[2-8]\d{7,9}(?:#\d{1,6})?)$/.test(normalized)||/^[A-Za-z0-9-]{6,48}$/.test(q))){show("請輸入有效的手機、市話或訂單編號。");return;}
 button.disabled=true;show("正在查詢訂單，請稍候…");
 const callback="sj27Lookup_"+Date.now()+"_"+Math.floor(Math.random()*1000000),tag=document.createElement("script");let finished=false;
