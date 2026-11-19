@@ -190,7 +190,7 @@ html,body,body *,body *::before,body *::after{
 .sj-gallery-thumb{cursor:pointer;display:flex;flex-direction:column;gap:7px;align-items:center;padding:6px 6px 10px;border:2px solid #e9d9c9;background:#fffdf9;border-radius:12px;min-width:0}
 .sj-gallery-thumb.is-active{border-color:#803d50;background:#fcf4ef}
 .sj-gallery-thumb img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;background:#f4ede5}
-.sj-gallery-thumb span{font-size:10px;line-height:1.45;color:#735b50;text-align:center;overflow-wrap:anywhere}
+.sj-selected-description{margin-top:12px;padding:12px 16px;border:1px solid #e9d9c9;border-radius:12px;background:#fffdf9;color:#735b50;line-height:1.8}.sj-selected-description strong{color:#803d50}.sj-selected-description p{margin:4px 0 0;font-size:13px}
 .sj-gallery-thumb:focus-visible{outline:3px solid #803d50;outline-offset:2px}
 .sj-gallery-info{margin-top:16px;padding:17px 20px;background:#fffdf9;border:1px solid #e9d9c9;border-radius:14px;line-height:1.85}
 .sj-gallery-info h3{margin:0 0 5px;font-size:1.1rem;color:#803d50}
@@ -209,7 +209,7 @@ html,body,body *,body *::before,body *::after{
 </section>
 
 <section class="product" id="p1">
-  <div class="sj-gallery" aria-label="商品及提袋實物展示"><div class="sj-gallery-main"><img id="sjGalleryMain" src="images/gift-box-detail.jpg" alt="紀家烘焙坊蛋黃酥實品照" loading="lazy"><span id="sjGalleryCaption" class="sj-gallery-caption">紀家蛋黃酥禮盒</span></div><div class="sj-gallery-thumbs" role="group" aria-label="選擇商品照片"><button type="button" class="sj-gallery-thumb is-active" data-src="images/six-box.webp" data-name="6 入蛋黃酥禮盒" aria-label="查看6 入蛋黃酥禮盒" aria-pressed="true"><img src="images/six-box.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>6 入蛋黃酥禮盒</span></button><button type="button" class="sj-gallery-thumb" data-src="images/fifteen-box.webp" data-name="15 入蛋黃酥禮盒" aria-label="查看15 入蛋黃酥禮盒" aria-pressed="false"><img src="images/fifteen-box.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>15 入蛋黃酥禮盒</span></button><button type="button" class="sj-gallery-thumb" data-src="images/nonwoven-bag.webp" data-name="橘色不織布提袋" aria-label="查看橘色不織布提袋" aria-pressed="false"><img src="images/nonwoven-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>橘色不織布提袋</span></button><button type="button" class="sj-gallery-thumb" data-src="images/six-plastic-bag.webp" data-name="6 入一般塑膠背心袋" aria-label="查看6 入一般塑膠背心袋" aria-pressed="false"><img src="images/six-plastic-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>6 入一般塑膠背心袋</span></button><button type="button" class="sj-gallery-thumb" data-src="images/fifteen-plastic-bag.webp" data-name="15 入專用塑膠禮盒袋" aria-label="查看15 入專用塑膠禮盒袋" aria-pressed="false"><img src="images/fifteen-plastic-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>15 入專用塑膠禮盒袋</span></button></div></div>
+  <div class="sj-gallery" aria-label="商品及提袋實物展示"><div class="sj-gallery-main"><img id="sjGalleryMain" src="images/gift-box-detail.jpg" alt="紀家烘焙坊蛋黃酥實品照" loading="lazy"></div><div class="sj-gallery-thumbs" role="group" aria-label="選擇商品照片"><button type="button" class="sj-gallery-thumb is-active" data-src="images/six-box.webp" data-name="6 入蛋黃酥禮盒" aria-label="查看6 入蛋黃酥禮盒" aria-pressed="true"><img src="images/six-box.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></button><button type="button" class="sj-gallery-thumb" data-src="images/fifteen-box.webp" data-name="15 入蛋黃酥禮盒" aria-label="查看15 入蛋黃酥禮盒" aria-pressed="false"><img src="images/fifteen-box.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></button><button type="button" class="sj-gallery-thumb" data-src="images/nonwoven-bag.webp" data-name="橘色不織布提袋" aria-label="查看橘色不織布提袋" aria-pressed="false"><img src="images/nonwoven-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></button><button type="button" class="sj-gallery-thumb" data-src="images/six-plastic-bag.webp" data-name="6 入一般塑膠背心袋" aria-label="查看6 入一般塑膠背心袋" aria-pressed="false"><img src="images/six-plastic-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></button><button type="button" class="sj-gallery-thumb" data-src="images/fifteen-plastic-bag.webp" data-name="15 入專用塑膠禮盒袋" aria-label="查看15 入專用塑膠禮盒袋" aria-pressed="false"><img src="images/fifteen-plastic-bag.webp" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></button></div><div class="sj-selected-description" id="sjSelectedDescription" aria-live="polite" hidden><strong id="sjSelectedName"></strong><p id="sjSelectedText"></p></div></div>
   <div class="product-details">
     <div class="eyebrow">EGG YOLK PASTRY</div>
     <h2>蛋黃酥</h2>
@@ -240,7 +240,7 @@ html,body,body *,body *::before,body *::after{
 <a class="social-icon-link" href="https://www.instagram.com/still_ji/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17.6" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram</span></a>
 </div></footer>
 <script id="sj-product-gallery-script">(function(){
-const main=document.getElementById("sjGalleryMain"),caption=document.getElementById("sjGalleryCaption");
+const main=document.getElementById("sjGalleryMain"),detail=document.getElementById("sjSelectedDescription"),title=document.getElementById("sjSelectedName"),description=document.getElementById("sjSelectedText");
 const descriptions={
 "6 入蛋黃酥禮盒":"每盒 6 顆，NT$300。適合日常分享與送禮，隨貨附一般塑膠背心袋。",
 "15 入蛋黃酥禮盒":"每盒 15 顆，NT$750。適合團聚與節慶贈禮，隨貨附 15 入專用塑膠禮盒袋。",
@@ -252,9 +252,9 @@ const buttons=[...document.querySelectorAll(".sj-gallery-thumb")];
 buttons.forEach(btn=>btn.addEventListener("click",()=>{
 const src=btn.dataset.src,name=btn.dataset.name;
 const test=new Image();test.onload=()=>{
-main.src=src;main.alt=name;caption.textContent=name;
+main.src=src;main.alt=name;title.textContent=name;description.textContent=descriptions[name]||"";detail.hidden=false;
 buttons.forEach(b=>{const active=b===btn;b.classList.toggle("is-active",active);b.setAttribute("aria-pressed",String(active));});
-};test.onerror=()=>{caption.textContent="照片準備中，請稍後再查看";};test.src=src;
+};test.onerror=()=>{title.textContent=name;description.textContent="照片暫時無法顯示，請稍後再試。";detail.hidden=false;};test.src=src;
 }));
-const first=buttons[0];if(first){const check=new Image();check.onload=()=>first.click();check.src=first.dataset.src;}
+
 })();</script></body></html>
