@@ -77,6 +77,20 @@ $("shippingHelpButton").addEventListener("click",()=>{const open=$("shippingHelp
 /* 主管展示版：公開 TEST 收單須完成 GAS 部署、安全驗收後，才可設定 endpoint。 */
 const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 let sj27RequestId='';
+let sj27OrderSubmitting=false;
+const sj27SubmissionKey='sj27-order-submit-delivery';
+function sj27OrderGuard(x){
+  const signature=JSON.stringify(x);
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(sj27SubmissionKey)||'null');
+    if(saved&&saved.signature===signature&&Date.now()-saved.time<120000)return false;
+  }catch(e){}
+  if(sj27OrderSubmitting)return false;
+  sj27OrderSubmitting=true;
+  try{sessionStorage.setItem(sj27SubmissionKey,JSON.stringify({signature,time:Date.now()}));}catch(e){}
+  return true;
+}
+
 function SJ27_REVIEW_ROWS(x){const n=k=>Number(x[k]||0),y=StillJi2027.calculate({four:x.four,ten:x.ten,fifteenGroup:x.group,fifteenBoxes:x.fifteen,bags:x.bags,address:x.address});return [['收件人姓名',x.name],['收件人電話',x.phone],['宅配地址',x.address],['出貨日期',x.date],['發票需求',x.invoice==='business'?'統編 '+x.taxId:'一般發票'],['到貨時段',x.arrival==='before13'?'13點前':x.arrival==='14to18'?'14–18點':'不指定'],['訂單內容',[n('four')?'6入4盒組 × '+n('four')+'組':'',n('ten')?'6入10盒組 × '+n('ten')+'組':'',n('group')?'6入15盒組 × '+n('group')+'組':'',n('fifteen')?'15入 × '+n('fifteen')+'盒':'',n('bags')?'提袋 × '+n('bags')+'個':''].filter(Boolean).join('、')],['訂單總金額','NT$ '+y.total.toLocaleString('zh-TW')]]}
 function sj27DemoSubmit(){const msg=$('sj27SendMsg');if(!SJ27_ORDER_ENDPOINT){msg.textContent='訂單服務暫時無法使用';return}const x=SJ27_COLLECT();if(!x.name.trim()||!x.phone.trim()||!x.date||!x.address.trim()){msg.textContent='請完整填寫訂購資料';return}if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂購資料：'+$('warnings').textContent;return}if(x.invoice==='business'&&!/^\d{8}$/.test(x.taxId.trim())){msg.textContent='請輸入8碼統一編號';return}const details=$('sj27ReviewDetails');details.textContent='';try{SJ27_REVIEW_ROWS(x).forEach(([label,value])=>{const div=document.createElement('div'),a=document.createElement('strong'),b=document.createElement('span');div.className='review-row';a.textContent=label;b.textContent=String(value||'—');div.append(a,b);details.append(div)})}catch(e){msg.textContent='無法計算訂單金額，請檢查資料';return}$('sj27Review').showModal()}
 
@@ -85,7 +99,7 @@ const SJ27_COLLECT=()=>({name:$('receiver').value,phone:$('phone').value,address
 
 
 $('sj27ReviewBack').addEventListener('click',()=>$('sj27Review').close());
-$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');btn.disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_self';form.style.display='none';const params={...x,kind:'delivery',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);form.submit();form.remove();$('sj27Review').close();btn.disabled=false;msg.textContent='正在開啟訂單成立結果，請勿重複送出。';});
+$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_self';form.style.display='none';const params={...x,kind:'delivery',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);form.submit();form.remove();$('sj27Review').close();msg.textContent='正在開啟訂單成立結果，請勿重複送出。';});
 </script><script id="sj-delivery-preview-script">
 (function(){
 const panel=document.getElementById("sjDeliveryPreview"),img=document.getElementById("sjDeliveryPreviewImage"),name=document.getElementById("sjDeliveryPreviewName"),desc=document.getElementById("sjDeliveryPreviewDesc");
