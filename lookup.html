@@ -33,13 +33,14 @@ const note=document.createElement("p");note.className="notice";note.textContent=
 }
 function search(){
 const q=input.value.trim();if(!q){show("請先輸入手機號碼或訂單編號。");input.focus();return;}
-if(!/^(09\\d{8}|0[2-8]\\d{7,8}(?:#\\d{1,6})?|SJ-\\d{5})$/i.test(q.replace(/[\\s()－-]/g,""))){show("請輸入有效的手機、市話或 SJ- 開頭的訂單編號。");return;}
+const normalized=q.replace(/[\s()－]/g,"").replace(/-/g,"");
+if(!(/^(?:09\d{8}|0[2-8]\d{7,9}(?:#\d{1,6})?)$/.test(normalized)||/^[A-Za-z0-9-]{6,48}$/.test(q))){show("請輸入有效的手機、市話或訂單編號。");return;}
 button.disabled=true;show("正在查詢訂單，請稍候…");
 const callback="sj27Lookup_"+Date.now()+"_"+Math.floor(Math.random()*1000000),tag=document.createElement("script");let finished=false;
 function done(data){if(finished)return;finished=true;clearTimeout(timer);delete window[callback];tag.remove();button.disabled=false;render(data);}
 window[callback]=done;const timer=setTimeout(()=>done({ok:false,message:"查詢逾時。GAS 查單後端可能尚未部署，請稍後再試。"}),12000);
 tag.onerror=()=>done({ok:false,message:"目前無法連線至查單後端，請稍後再試。"});
-tag.src=API+"?action=lookup-summary&website=stillji2027&q="+encodeURIComponent(q.replace(/[\\s()－-]/g,""))+"&callback="+encodeURIComponent(callback);
+tag.src=API+"?action=lookup-summary&website=stillji2027&q="+encodeURIComponent(normalized)+"&callback="+encodeURIComponent(callback);
 document.head.append(tag);
 }
 button.addEventListener("click",search);input.addEventListener("keydown",e=>{if(e.key==="Enter")search();});
