@@ -56,7 +56,7 @@ feedback.textContent="已複製單號，請貼到黑貓查詢頁。";
 });
 actions.append(copy,link,feedback);body.append(actions);
 }
-const hint=document.createElement("p");hint.className="notice";hint.textContent="姓名、電話及地址不會在未驗證身分時顯示。";body.append(hint);
+
 card.append(summary,body);result.append(card);
 });
 if(data.limited){const p=document.createElement("p");p.textContent="訂單較多，僅顯示最新 60 筆，請聯繫客服查詢其他訂單。";result.append(p);}
