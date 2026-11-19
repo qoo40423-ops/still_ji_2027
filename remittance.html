@@ -28,13 +28,13 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <header><nav class="sj-global-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header>
 <main><div class="eyebrow">STILL JI · MID-AUTUMN 2027</div><h1>自取匯款回報</h1><p class="intro">完成匯款後，請填寫訂單資料與帳號後五碼。<br>本專區僅供「門市自取」訂單使用。</p>
 <section class="panel"><form id="remittanceForm" autocomplete="on">
-<div class="field"><label for="orderId">訂單編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="SJ-58321（舊訂單也適用）" autocomplete="off"><div class="hint">請輸入訂單成立時取得的編號。</div></div>
+<div class="field"><label for="orderId">訂單編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="例如 SJ-58321" autocomplete="off"><div class="hint">請輸入訂單成立時取得的編號。</div></div>
 <div class="field"><label for="phone">訂購聯絡電話</label><input id="phone" name="phone" type="tel" maxlength="30" required placeholder="請輸入訂購時填寫的電話" autocomplete="tel"></div>
 <div class="field"><label for="transferDate">匯款日期</label><input id="transferDate" name="transferDate" type="date" required><div class="hint">請選擇實際完成轉帳的日期，方便店家核對銀行入帳紀錄。</div></div>
 <div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
 <div class="note">回報後將由店家人工核對款項；送出不代表已付款成功。<br>門市現金付款不適用本表單，宅配訂單請依原流程確認宅配單。</div>
-<input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>測試送出暫不可用</button><div id="status" role="status" aria-live="polite">TEST 測試中；後端尚未開放匯款回報，不會寫入訂單。</div>
-</form></section></main>
+<input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>送出匯款回報</button><div id="status" role="status" aria-live="polite"></div>
+</form><section class="delivery-help" aria-label="宅配匯款通知" style="margin-top:28px;padding:22px 20px;border:1px solid #e7d8cb;border-radius:16px;background:#faf5f0;text-align:center"><p style="margin:0 0 14px;line-height:1.9;color:#694d43">宅配到府訂單需另行確認宅配單資料，完成匯款後，請透過官方 LINE 聯繫我們。</p><a href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener" style="display:inline-block;background:#803d50;color:#fff;text-decoration:none;padding:13px 25px;border-radius:999px;font-weight:600">通知官方 LINE</a></section></section></main>
 <footer>紀家烘焙坊 · STILL JI｜116 年中秋訂購<div class="social-icons">
 <a class="social-icon-link" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.3c-5.1 0-9.2 3.2-9.2 7.2 0 3.6 3.2 6.5 7.6 7.1l-.6 3.1 4-3.1c4.2-.6 7.4-3.5 7.4-7.1 0-4-4.1-7.2-9.2-7.2Z" fill="currentColor"/><path d="M6.6 9v3.7h2M10 9v3.7m1.8 0V9l2.2 3.7V9m4.1 0h-2.3v3.7h2.3m-2.3-1.9h1.8" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>LINE</span></a>
 <a class="social-icon-link" href="https://www.facebook.com/JiPastry" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.1 0 2.25.2 2.25.2v2.47H15.2c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg><span>Facebook</span></a>
@@ -58,8 +58,8 @@ last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').sl
 const validEndpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL);
 if(validEndpoint){form.action=TEST_WEB_APP_URL;form.method='POST';form.target='_blank';}
 submitBtn.disabled=!(PUBLIC_REMITTANCE_READY&&validEndpoint);
-submitBtn.textContent=submitBtn.disabled?'測試送出暫不可用':'送出 TEST 匯款回報';
-status.textContent=submitBtn.disabled?'測試送出暫不可用。':'目前僅供 TEST 驗證；後端匯款回報仍關閉，送出會顯示「服務尚未開放」，不會寫入訂單。';
+submitBtn.textContent='送出匯款回報';
+status.textContent=submitBtn.disabled?'匯款回報目前暫不開放，請稍後再試。':'';
 form.addEventListener('submit',event=>{
   const id=orderId.value.trim().toUpperCase();
   const normalizedPhone=phone.value.replace(/[\s()－-]/g,'');
