@@ -42,23 +42,46 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 </div></footer>
 <script>
 const form=document.getElementById('remittanceForm');
+const orderId=document.getElementById('orderId');
+const phone=document.getElementById('phone');
 const last5=document.getElementById('last5');
 const transferDate=document.getElementById('transferDate');
-const localToday=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
-transferDate.max=localToday();
-
+const submitBtn=document.getElementById('submitBtn');
+const status=document.getElementById('status');
+const TEST_WEB_APP_URL='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
+// 安全預設：未完成後端部署與 HTTP 端到端驗證前，保持 false。
+const PUBLIC_REMITTANCE_READY=false;
+const taiwanToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+transferDate.max=taiwanToday();
+orderId.addEventListener('input',()=>{orderId.value=orderId.value.toUpperCase().replace(/\s/g,'')});
 last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').slice(0,5)});
-// 完成 TEST Web App 部署與安全驗收後，才填入部署網址並開啟。
-const TEST_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
-if(/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL)){
-  form.action=TEST_WEB_APP_URL;
-  form.method='POST';
-  form.target='_blank';
-  // TEST 階段保持停用，直到部署權限及端到端測試確認。
-  document.getElementById('status').textContent='已設定 TEST 後端網址，等待安全驗收後開放送出。';
-}
+const validEndpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL);
+if(validEndpoint){form.action=TEST_WEB_APP_URL;form.method='POST';form.target='_blank';}
+submitBtn.disabled=!(PUBLIC_REMITTANCE_READY&&validEndpoint);
+submitBtn.textContent=submitBtn.disabled?'匯款回報（測試版尚未開放送出）':'送出匯款回報';
+status.textContent=submitBtn.disabled?'目前正在進行 TEST 安全驗收，暫不開放送出；資料不會傳送。':'送出後將另開結果頁，請確認回報是否成功。';
 form.addEventListener('submit',event=>{
-  if(!form.action.includes('script.google.com/macros/s/')){event.preventDefault();return;}
-  if(last5.value==='88888'){event.preventDefault();document.getElementById('status').textContent='請填寫實際匯款帳號後五碼。';}
+  const id=orderId.value.trim().toUpperCase();
+  const normalizedPhone=phone.value.replace(/[\s()－-]/g,'');
+  const day=transferDate.value;
+  if(!PUBLIC_REMITTANCE_READY||!validEndpoint){event.preventDefault();status.textContent='匯款回報尚未開放，資料沒有送出。';return;}
+  if(!/^(?:SJ-\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8})$/.test(id)){
+    event.preventDefault();status.textContent='請確認訂單編號格式。';orderId.focus();return;
+  }
+  if(!/^(09\d{8}|0[2-8]\d{7,8}(?:#\d{1,6})?)$/.test(normalizedPhone)){
+    event.preventDefault();status.textContent='請輸入訂購時填寫的有效電話。';phone.focus();return;
+  }
+  if(!/^\d{5}$/.test(last5.value)||last5.value==='88888'){
+    event.preventDefault();status.textContent='請填寫實際匯款帳號後五碼（不可使用門市收款代碼）。';last5.focus();return;
+  }
+  const parsed=new Date(day+'T00:00:00Z');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==day||day>taiwanToday()){
+    event.preventDefault();status.textContent='請選擇有效且不晚於今天的匯款日期。';transferDate.focus();return;
+  }
+  orderId.value=id;
+  phone.value=normalizedPhone;
+  submitBtn.disabled=true;
+  status.textContent='已開啟回報結果頁，請確認結果；若頁面遭阻擋，請勿連續點擊。';
+  // 不自動重新啟用，避免同一頁面連續重送。
 });
 </script></body></html>
