@@ -68,6 +68,8 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <section class="panel"><h2>03｜選擇商品</h2><p class="help">單買 6 入至少 8 盒；單買 15 入至少 3 盒；兩種混搭至少 42 顆。</p>
 <div class="item"><div class="sj-pickup-product"><input id="chooseSix" type="checkbox" aria-label="選購蛋黃酥 6 入"><button type="button" class="sj-preview-trigger" data-product="six" aria-label="查看 6 入禮盒照片" aria-controls="sjPickupPreview" aria-expanded="false">▧</button><label for="chooseSix">蛋黃酥 6 入<small>NT$300／盒</small></label></div><input id="six" type="number" min="0" step="1" value="0" aria-label="6 入禮盒數量" disabled></div>
 <div class="item"><div class="sj-pickup-product"><input id="chooseFifteen" type="checkbox" aria-label="選購蛋黃酥 15 入"><button type="button" class="sj-preview-trigger" data-product="fifteen" aria-label="查看 15 入禮盒照片" aria-controls="sjPickupPreview" aria-expanded="false">▧</button><label for="chooseFifteen">蛋黃酥 15 入<small>NT$750／盒</small></label></div><input id="fifteen" type="number" min="0" step="1" value="0" aria-label="15 入禮盒數量" disabled></div>
+<div class="item"><div class="sj-pickup-product"><input id="chooseBags" type="checkbox" aria-label="加購 6 入不織布提袋"><button type="button" class="sj-preview-trigger" data-product="bag" aria-label="查看不織布提袋照片" aria-controls="sjPickupPreview" aria-expanded="false">▧</button><label for="chooseBags">6 入不織布提袋<small>NT$20／個</small></label></div><input id="bags" type="number" min="0" step="1" value="0" aria-label="不織布提袋數量" disabled></div>
+<p class="help">不織布提袋適用於 6 入禮盒，可依需求加購；不適用於 15 入禮盒。</p>
 <div id="sjPickupPreview" class="sj-product-preview" hidden aria-live="polite"><img id="sjPickupPreviewImage" alt=""><strong id="sjPickupPreviewName"></strong><p id="sjPickupPreviewDesc"></p></div>
 </section>
 <section class="panel"><h2>04｜備註與訂購金額</h2><div class="form-field"><label for="pickupNote">備註（選填）</label><textarea id="pickupNote" rows="3" maxlength="500" placeholder="如有其他需求，請在此備註"></textarea></div><div id="staffPriceNotice" class="info" hidden>已套用優惠試算：6 入 NT$285／盒、15 入 NT$720／盒。正式訂單仍須由店家確認優惠資格。</div><h2 style="margin-top:22px">訂購金額</h2><div class="totals" id="totals" aria-live="polite"></div><p class="error" id="warnings" role="alert"></p><button type="button" class="btn" disabled>正式送出訂單（尚未開放）</button></section>
@@ -93,11 +95,11 @@ select.value=slots.some(([value])=>value===previous)?previous:"";
 $("pickupSlotHelp").textContent=!selected?"請先選擇日期，再選擇可預約的取貨時段。":special?"9/15 特別時段：上午 09:00–10:00，請於 10:00 前取件。":weekend?"週末開放 09:00–12:00 及三個下午時段，恕無法提前取貨。":"平日僅開放 13:00–15:00、15:00–17:00、17:00–18:00，恕無法提前取貨。";
 }
 function row(label,value,grand){const div=document.createElement("div");div.className="sumrow"+(grand?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;div.append(a,b);$("totals").append(div);}
-function calc(){const staffPreview=$("pickupNote").value.trim()==="8888";$("staffPriceNotice").hidden=!staffPreview;const a=Number($("six").value),b=Number($("fifteen").value),warnings=[];$("totals").textContent="";
-if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("蛋黃酥總數",pieces+" 顆");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)).toLocaleString("zh-TW"),true);
+function calc(){const staffPreview=$("pickupNote").value.trim()==="8888";$("staffPriceNotice").hidden=!staffPreview;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
+if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("蛋黃酥總數",pieces+" 顆");row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
 if(pieces>4800)warnings.push("本筆訂單超過每日 4,800 顆上限");
 if(pieces>0&&((a>0&&b>0&&pieces<42)||(a>0&&b===0&&a<8)||(b>0&&a===0&&b<3)))warnings.push("未達訂單最小數量標準，僅能現場購買，敬請見諒");
-if(!pieces)warnings.push("請選擇商品數量");
+if(!pieces)warnings.push("請選擇商品數量");if(bags>0)warnings.push("不織布提袋加購尚待後端同步，目前無法送出含提袋的訂單");
 }
 if(staffPreview)warnings.push("優惠價格僅供預覽，正式啟用前須由後端驗證資格");if(!selected)warnings.push("請選擇提貨日期");
 $("chosenDate").textContent=selected?"已選擇提貨日："+selected.replace(/-/g,"/"):"尚未選擇提貨日期";
@@ -105,16 +107,16 @@ $("midAutumnNotice").hidden=selected!=="2027-09-15";
 if(!$("pickupTime").value)warnings.push("請選擇提貨時段");
 $("warnings").textContent=warnings.join("；");}
 $("prevMonth").addEventListener("click",()=>{month=8;calendar();});$("nextMonth").addEventListener("click",()=>{month=9;calendar();});
-[["chooseSix","six"],["chooseFifteen","fifteen"]].forEach(([checkId,quantityId])=>{const check=$(checkId),quantity=$(quantityId);check.addEventListener("change",()=>{quantity.disabled=!check.checked;quantity.value=check.checked?"1":"0";calc();if(check.checked)quantity.focus();});});
-["six","fifteen","pickupNote"].forEach(k=>$(k).addEventListener("input",calc));$("pickupTime").addEventListener("change",calc);updatePickupSlots();calendar();calc();
+[["chooseSix","six"],["chooseFifteen","fifteen"],["chooseBags","bags"]].forEach(([checkId,quantityId])=>{const check=$(checkId),quantity=$(quantityId);check.addEventListener("change",()=>{quantity.disabled=!check.checked;quantity.value=check.checked?"1":"0";calc();if(check.checked)quantity.focus();});});
+["six","fifteen","bags","pickupNote"].forEach(k=>$(k).addEventListener("input",calc));$("pickupTime").addEventListener("change",calc);updatePickupSlots();calendar();calc();
 
 /* 主管展示版：公開 TEST 收單須完成 GAS 部署、安全驗收後，才可設定 endpoint。 */
 const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 let sj27RequestId='';
-function SJ27_REVIEW_ROWS(x){const a=Number(x.six),b=Number(x.fifteen);return [['提貨人姓名',x.name],['提貨人手機',x.phone],['提貨日期',x.date],['取貨時段',x.slot],['訂單內容',[a?'6入 × '+a+'盒':'',b?'15入 × '+b+'盒':''].filter(Boolean).join('、')],['備註',x.notes||'無'],['訂單總金額','NT$ '+(a*300+b*750).toLocaleString('zh-TW')]]}
+function SJ27_REVIEW_ROWS(x){const a=Number(x.six),b=Number(x.fifteen),bags=Number(x.bags);return [['提貨人姓名',x.name],['提貨人手機',x.phone],['提貨日期',x.date],['取貨時段',x.slot],['訂單內容',[a?'6入 × '+a+'盒':'',b?'15入 × '+b+'盒':'',bags?'不織布提袋 × '+bags+'個':''].filter(Boolean).join('、')],['備註',x.notes||'無'],['訂單總金額','NT$ '+(a*300+b*750+bags*20).toLocaleString('zh-TW')]]}
 function sj27DemoSubmit(){const msg=$('sj27SendMsg');if(!SJ27_ORDER_ENDPOINT){msg.textContent='訂單服務暫時無法使用';return}const x=SJ27_COLLECT();if(!x.name.trim()||!x.phone.trim()||!x.date||!x.slot){msg.textContent='請完整填寫訂購資料';return}if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂購資料：'+$('warnings').textContent;return}const details=$('sj27ReviewDetails');details.textContent='';try{SJ27_REVIEW_ROWS(x).forEach(([label,value])=>{const div=document.createElement('div'),a=document.createElement('strong'),b=document.createElement('span');div.className='review-row';a.textContent=label;b.textContent=String(value||'—');div.append(a,b);details.append(div)})}catch(e){msg.textContent='無法計算訂單金額，請檢查資料';return}$('sj27Review').showModal()}
 
-const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value,date:selected,slot:$('pickupTime').value,six:$('six').value,fifteen:$('fifteen').value,notes:$('pickupNote').value});
+const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value,date:selected,slot:$('pickupTime').value,six:$('six').value,fifteen:$('fifteen').value,bags:$('bags').value,notes:$('pickupNote').value});
 (function(){const b=document.querySelector('button.btn[disabled]');if(!b)return;b.disabled=false;b.id='sj27Send';b.textContent='確認送出訂單';b.addEventListener('click',sj27DemoSubmit);const p=document.createElement('p');p.id='sj27SendMsg';p.className='notice';p.textContent='目前為 TEST 測試收單，送出後將寫入測試試算表。';b.after(p);})();
 
 
@@ -123,7 +125,7 @@ $('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();cons
 </script><script id="sj-pickup-hover-preview">
 (function(){
 const panel=document.getElementById("sjPickupPreview"),img=document.getElementById("sjPickupPreviewImage"),name=document.getElementById("sjPickupPreviewName"),desc=document.getElementById("sjPickupPreviewDesc");
-const items={six:{name:"蛋黃酥 6 入",desc:"每盒 6 顆，NT$300。隨貨附一般塑膠背心袋。",src:"images/six-box.webp"},fifteen:{name:"蛋黃酥 15 入",desc:"每盒 15 顆，NT$750。隨貨附 15 入專用塑膠禮盒袋。",src:"images/fifteen-box.webp"}};
+const items={six:{name:"蛋黃酥 6 入",desc:"每盒 6 顆，NT$300。隨貨附一般塑膠背心袋。",src:"images/six-box.webp"},fifteen:{name:"蛋黃酥 15 入",desc:"每盒 15 顆，NT$750。隨貨附 15 入專用塑膠禮盒袋。",src:"images/fifteen-box.webp"},bag:{name:"6 入不織布提袋",desc:"NT$20／個。適用於 6 入禮盒，可依需求加購；不適用於 15 入禮盒。",src:"images/nonwoven-bag.webp"}};
 const buttons=[...document.querySelectorAll(".sj-preview-trigger")];let selected=null;
 function show(id){const data=items[id];if(!data)return;selected=id;img.src=data.src;img.alt=data.name;name.textContent=data.name;desc.textContent=data.desc;panel.hidden=false;buttons.forEach(b=>b.setAttribute("aria-expanded",String(b.dataset.product===id)));}
 function hide(){selected=null;panel.hidden=true;buttons.forEach(b=>b.setAttribute("aria-expanded","false"));}
