@@ -33,7 +33,7 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <div class="field"><label for="transferDate">匯款日期</label><input id="transferDate" name="transferDate" type="date" required><div class="hint">請選擇實際完成轉帳的日期，方便店家核對銀行入帳紀錄。</div></div>
 <div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
 <div class="note">回報後將由店家人工核對款項；送出不代表已付款成功。<br>門市現金付款不適用本表單，宅配訂單請依原流程確認宅配單。</div>
-<input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>匯款回報（測試版尚未開放送出）</button><div id="status" role="status" aria-live="polite">目前為 TEST 介面展示，尚未連接公開回報服務，資料不會送出。</div>
+<input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>測試送出暫不可用</button><div id="status" role="status" aria-live="polite">TEST 測試中；後端尚未開放匯款回報，不會寫入訂單。</div>
 </form></section></main>
 <footer>紀家烘焙坊 · STILL JI｜116 年中秋訂購<div class="social-icons">
 <a class="social-icon-link" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.3c-5.1 0-9.2 3.2-9.2 7.2 0 3.6 3.2 6.5 7.6 7.1l-.6 3.1 4-3.1c4.2-.6 7.4-3.5 7.4-7.1 0-4-4.1-7.2-9.2-7.2Z" fill="currentColor"/><path d="M6.6 9v3.7h2M10 9v3.7m1.8 0V9l2.2 3.7V9m4.1 0h-2.3v3.7h2.3m-2.3-1.9h1.8" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>LINE</span></a>
@@ -50,7 +50,7 @@ const submitBtn=document.getElementById('submitBtn');
 const status=document.getElementById('status');
 const TEST_WEB_APP_URL='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 // 安全預設：未完成後端部署與 HTTP 端到端驗證前，保持 false。
-const PUBLIC_REMITTANCE_READY=false;
+const PUBLIC_REMITTANCE_READY=true;
 const taiwanToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 transferDate.max=taiwanToday();
 orderId.addEventListener('input',()=>{orderId.value=orderId.value.toUpperCase().replace(/\s/g,'')});
@@ -58,8 +58,8 @@ last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').sl
 const validEndpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL);
 if(validEndpoint){form.action=TEST_WEB_APP_URL;form.method='POST';form.target='_blank';}
 submitBtn.disabled=!(PUBLIC_REMITTANCE_READY&&validEndpoint);
-submitBtn.textContent=submitBtn.disabled?'匯款回報（測試版尚未開放送出）':'送出匯款回報';
-status.textContent=submitBtn.disabled?'目前正在進行 TEST 安全驗收，暫不開放送出；資料不會傳送。':'送出後將另開結果頁，請確認回報是否成功。';
+submitBtn.textContent=submitBtn.disabled?'測試送出暫不可用':'送出 TEST 匯款回報';
+status.textContent=submitBtn.disabled?'測試送出暫不可用。':'目前僅供 TEST 驗證；後端匯款回報仍關閉，送出會顯示「服務尚未開放」，不會寫入訂單。';
 form.addEventListener('submit',event=>{
   const id=orderId.value.trim().toUpperCase();
   const normalizedPhone=phone.value.replace(/[\s()－-]/g,'');
