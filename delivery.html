@@ -57,6 +57,8 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 </div></footer><script src="pricing-2027.js?v=20271115-9"></script><script>
 const ids=["four","ten","fifteenGroup","bags","fifteenBoxes"];const $=id=>document.getElementById(id);
 let month=8,selected="";
+let mixedCutoffNoticeShown=false;
+function notifyMixedCutoff(){const mixed=Number($("four").value)>0&&Number($("fifteenGroup").value)>0;if(mixed&&!mixedCutoffNoticeShown){mixedCutoffNoticeShown=true;alert("出貨日期提醒：6 入 4 盒組最晚於 08/31（二）出貨。\n若您希望 6 入 15 盒組安排於 09/10（五）前出貨，請將 15 盒組另外新增一筆訂單。\n若維持同筆訂單，最晚出貨日仍為 08/31（二）。");}if(!mixed)mixedCutoffNoticeShown=false;}
 function latestDeliveryDate(){return Number($("four").value)>0?"2027-08-31":"2027-09-10";}
 const money=n=>"NT$ "+n.toLocaleString("zh-TW");
 function input(){const x={};ids.forEach(k=>x[k]=$(k).value);x.address=$("address").value;return x;}
@@ -68,7 +70,7 @@ function row(label,value,extra){const d=document.createElement("div");d.classNam
 function calc(){const x=input();$("totals").textContent="";const errors=[];try{const y=StillJi2027.calculate(x);const pieces=StillJi2027.piecesForOrder(x);row("6 入禮盒",y.sixBoxes+" 盒");row("15 入禮盒",y.fifteenBoxes+" 盒");row("商品小計",money(y.goods));row("提袋費用",money(y.bagAmount));row("基本運費",money(y.shipping));row("宜花東加價",money(y.remoteSurcharge));row("應付總額",money(y.total),true);row("蛋黃酥總數",pieces+" 顆");if(pieces>4800)errors.push("本筆訂單超過每日 4,800 顆產能上限");if(!selected)errors.push("請選擇出貨日期");else if(selected>latestDeliveryDate())errors.push("所選商品最晚出貨日為 "+latestDeliveryDate().replace(/-/g,"/")+"，請重新選擇日期");}catch(e){errors.push(e.message);}
 $("chosenDate").textContent=selected?"已選擇出貨日："+selected.replace(/-/g,"/"):"尚未選擇出貨日期";if(selected){const start=new Date(selected+"T00:00:00Z");const format=d=>(d.getUTCMonth()+1)+"/"+d.getUTCDate();const first=new Date(start.getTime()+86400000),last=new Date(start.getTime()+172800000);$("arrivalEstimate").textContent="預計到貨日期："+format(first)+"～"+format(last)+"（出貨後約 1～2 天，實際依物流配送為準）";}else $("arrivalEstimate").textContent="";$("warnings").textContent=errors.join("；");}
 $("prevMonth").addEventListener("click",()=>{month=8;calendar();});$("nextMonth").addEventListener("click",()=>{month=9;calendar();});
-ids.forEach(k=>{const field=$(k),check=$("check-"+k);check.addEventListener("change",()=>{field.disabled=!check.checked;field.value=check.checked?(k==="fifteenBoxes"?"4":"1"):"0";calendar();calc();});field.addEventListener("input",()=>{calendar();calc();});});$("address").addEventListener("input",calc);
+ids.forEach(k=>{const field=$(k),check=$("check-"+k);check.addEventListener("change",()=>{field.disabled=!check.checked;field.value=check.checked?(k==="fifteenBoxes"?"4":"1"):"0";calendar();calc();notifyMixedCutoff();});field.addEventListener("input",()=>{calendar();calc();notifyMixedCutoff();});});$("address").addEventListener("input",calc);
 $("invoice").addEventListener("change",()=>{$("taxField").hidden=$("invoice").value!=="business";});
 $("shippingHelpButton").addEventListener("click",()=>{const open=$("shippingHelp").hidden;$("shippingHelp").hidden=!open;$("shippingHelpButton").setAttribute("aria-expanded",String(open));$("shippingHelpButton").textContent=open?"收合運費規則 −":"運費計算規則 ＋";});calendar();calc();
 
