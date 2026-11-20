@@ -97,6 +97,11 @@ document.getElementById('sj27ResultBack').addEventListener('click',()=>{
     sj27LastOrderSucceeded=false;
     sj27LastOrderFailed=false;
     try{sessionStorage.removeItem(sj27SubmissionKey)}catch(e){}
+    const sendBtn=$('sj27Send'),confirmBtn=$('sj27ReviewConfirm'),sendMsg=$('sj27SendMsg');
+    if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='確認送出訂單';}
+    if(confirmBtn){confirmBtn.disabled=false;confirmBtn.textContent='確認資料並送出';}
+    if(sendMsg){sendMsg.textContent='';sendMsg.hidden=true;}
+    $('sj27InlineProgress').textContent='訂單處理中，請勿重複送出；請等待下方結果顯示。';
     calendar();calc();
   }
   sj27ResultPanel.hidden=true;
