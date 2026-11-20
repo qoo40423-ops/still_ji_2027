@@ -95,7 +95,7 @@ select.value=slots.some(([value])=>value===previous)?previous:"";
 $("pickupSlotHelp").textContent=!selected?"請先選擇日期，再選擇可預約的取貨時段。":special?"9/15 特別時段：上午 09:00–10:00，請於 10:00 前取件。":weekend?"週末開放 09:00–12:00 及三個下午時段，恕無法提前取貨。":"平日僅開放 13:00–15:00、15:00–17:00、17:00–18:00，恕無法提前取貨。";
 }
 function row(label,value,grand){const div=document.createElement("div");div.className="sumrow"+(grand?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;div.append(a,b);$("totals").append(div);}
-const SJ27_FRIEND_CODES={'0000':'亭霏','0007':'亭緯','5858':'吳董','0001':'玟萱','0002':'同哲'};
+const SJ27_FRIEND_CODES={'0000':'亭霏','0057':'亭緯','0071':'慈儀','5858':'吳董','0001':'玟萱','0002':'同哲'};
 function friendInfo(){const code=$("pickupNote").value.trim();return Object.prototype.hasOwnProperty.call(SJ27_FRIEND_CODES,code)?{code,name:SJ27_FRIEND_CODES[code]}:null;}
 function calc(){const friend=friendInfo();$('friendBankRow').hidden=$('friendPayment').value!=='銀行匯款';$('friendRemitFields').hidden=$('friendPayment').value!=='銀行匯款';const staffPreview=Boolean(friend)&&$("friendDiscount").value==='yes';$("staffPriceNotice").hidden=!friend;if(friend)$("friendIdentity").textContent='員工親友：'+friend.name;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
 if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
