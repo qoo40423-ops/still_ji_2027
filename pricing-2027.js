@@ -39,10 +39,14 @@
     const fifteenBoxes=integer(input.fifteenBoxes||0,"15入盒數");
     const bags=integer(input.bags||0,"不織布提袋");
     const remote=remoteFromAddress(input.address);
-    if(bags>0&&!fifteenGroup)throw Error("提袋分配規則僅確認6入15盒組，其他組合需先確認");
-    const bagAllocation=allocateBags(fifteenGroup,bags);
-    const shippingSix=150*four+170*ten+bagAllocation.reduce((sum,n)=>sum+(n<=4?170:210),0);
     const sixBoxes=4*four+10*ten+15*fifteenGroup;
+    if(bags>sixBoxes)throw Error("不織布提袋數量不可超過6入禮盒數量");
+    // Allocate bags to 4/10-box packages first, without changing their shipping.
+    let remaining=bags;
+    remaining-=Math.min(remaining,four*4);
+    remaining-=Math.min(remaining,ten*10);
+    const bagAllocation=allocateBags(fifteenGroup,remaining);
+    const shippingSix=150*four+170*ten+bagAllocation.reduce((sum,n)=>sum+(n<=4?170:210),0);
     if(fifteenBoxes>0&&fifteenBoxes<4)throw Error("15入宅配至少需訂購4盒");
     const fifteenCartons=Math.ceil(fifteenBoxes/10);
     const shippingFifteen=fifteenCartons*210;
