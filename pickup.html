@@ -72,7 +72,7 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <p class="help">不織布提袋適用於 6 入禮盒，可依需求加購；不適用於 15 入禮盒。</p>
 <div id="sjPickupPreview" class="sj-product-preview" hidden aria-live="polite"><img id="sjPickupPreviewImage" alt=""><strong id="sjPickupPreviewName"></strong><p id="sjPickupPreviewDesc"></p></div>
 </section>
-<section class="panel"><h2>04｜備註與訂購金額</h2><div class="form-field"><label for="pickupNote">備註（選填）</label><textarea id="pickupNote" rows="3" maxlength="500" placeholder="如有其他需求，請在此備註"></textarea></div><div id="staffPriceNotice" class="info" hidden>已套用優惠試算：6 入 NT$285／盒、15 入 NT$720／盒。正式訂單仍須由店家確認優惠資格。</div><h2 style="margin-top:22px">訂購金額</h2><div class="totals" id="totals" aria-live="polite"></div><p class="error" id="warnings" role="alert"></p><button type="button" class="btn" disabled>正式送出訂單（尚未開放）</button></section>
+<section class="panel"><h2>04｜備註與訂購金額</h2><div class="form-field"><label for="pickupNote">備註（選填）</label><textarea id="pickupNote" rows="3" maxlength="500" placeholder="如有其他需求，請在此備註"></textarea></div><div id="staffPriceNotice" class="info" hidden><strong id="friendIdentity">員工親友訂單</strong><p>是否使用優惠價格？</p><select id="friendDiscount" aria-label="是否使用員工優惠"><option value="no">否，維持一般售價</option><option value="yes">是，使用員工優惠</option></select><p>付款方式</p><select id="friendPayment" aria-label="員工親友付款方式"><option value="銀行匯款">銀行匯款</option><option value="現場付款">現場付款</option></select><p>員工親友訂單無72小時付款期限，仍需完成付款。</p></div><h2 style="margin-top:22px">訂購金額</h2><div class="totals" id="totals" aria-live="polite"></div><p class="error" id="warnings" role="alert"></p><button type="button" class="btn" disabled>正式送出訂單（尚未開放）</button></section>
 <dialog id="sj27Review" class="sj27-review" aria-labelledby="sj27ReviewTitle"><h2 id="sj27ReviewTitle">請再次確認訂單資訊</h2><p>確認無誤後，才會正式送出訂單。</p><div id="sj27ReviewDetails"></div><div class="review-actions"><button type="button" id="sj27ReviewBack">返回修改</button><button type="button" id="sj27ReviewConfirm">確認資料並送出</button></div></dialog><section id="sj27InlineResult" class="panel" hidden aria-label="訂單送出結果" style="max-width:820px;margin:0 auto"><p id="sj27InlineProgress" class="notice" role="status">訂單處理中，請勿重複送出；請等待下方結果顯示。</p><iframe id="sj27ResultFrame" name="sj27ResultFrame" title="訂單成立結果" style="display:block;width:100%;height:980px;border:0;border-radius:14px;background:#f6eee6" loading="eager"></iframe><p class="notice">若顯示失敗訊息，請先查詢訂單是否成立，避免重複送單。</p><button type="button" class="btn" id="sj27ResultBack" style="margin-top:8px">返回訂購表單</button></section></main><footer>紀家烘焙坊 · STILL JI<br>彰化市三民路402-2號<div class="social-icons">
 <a class="social-icon-link" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.3c-5.1 0-9.2 3.2-9.2 7.2 0 3.6 3.2 6.5 7.6 7.1l-.6 3.1 4-3.1c4.2-.6 7.4-3.5 7.4-7.1 0-4-4.1-7.2-9.2-7.2Z" fill="currentColor"/><path d="M6.6 9v3.7h2M10 9v3.7m1.8 0V9l2.2 3.7V9m4.1 0h-2.3v3.7h2.3m-2.3-1.9h1.8" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>LINE</span></a>
 <a class="social-icon-link" href="https://www.facebook.com/JiPastry" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.1 0 2.25.2 2.25.2v2.47H15.2c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg><span>Facebook</span></a>
@@ -95,20 +95,22 @@ select.value=slots.some(([value])=>value===previous)?previous:"";
 $("pickupSlotHelp").textContent=!selected?"請先選擇日期，再選擇可預約的取貨時段。":special?"9/15 特別時段：上午 09:00–10:00，請於 10:00 前取件。":weekend?"週末開放 09:00–12:00 及三個下午時段，恕無法提前取貨。":"平日僅開放 13:00–15:00、15:00–17:00、17:00–18:00，恕無法提前取貨。";
 }
 function row(label,value,grand){const div=document.createElement("div");div.className="sumrow"+(grand?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;div.append(a,b);$("totals").append(div);}
-function calc(){const staffPreview=$("pickupNote").value.trim()==="8888";$("staffPriceNotice").hidden=!staffPreview;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
+const SJ27_FRIEND_CODES={'0000':'亭霏','0007':'亭緯','5858':'吳董','0001':'玟萱','0002':'同哲'};
+function friendInfo(){const code=$("pickupNote").value.trim();return Object.prototype.hasOwnProperty.call(SJ27_FRIEND_CODES,code)?{code,name:SJ27_FRIEND_CODES[code]}:null;}
+function calc(){const friend=friendInfo(),staffPreview=Boolean(friend)&&$("friendDiscount").value==='yes';$("staffPriceNotice").hidden=!friend;if(friend)$("friendIdentity").textContent='員工親友：'+friend.name;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
 if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
 if(pieces>4800)warnings.push("本筆訂單超過每日 4,800 顆上限");
 if(pieces>0&&((a>0&&b>0&&pieces<42)||(a>0&&b===0&&a<8)||(b>0&&a===0&&b<3)))warnings.push("未達訂單最小數量標準，僅能現場購買，敬請見諒");
 if(!pieces)warnings.push("請選擇商品數量");if(bags>a)warnings.push("不織布提袋僅適用6入禮盒，加購數量不可超過6入盒數");
 }
-if(staffPreview)warnings.push("優惠價格僅供預覽，正式啟用前須由後端驗證資格");if(!selected)warnings.push("請選擇提貨日期");
+if(!selected)warnings.push("請選擇提貨日期");
 $("chosenDate").textContent=selected?"已選擇提貨日："+selected.replace(/-/g,"/"):"尚未選擇提貨日期";
 $("midAutumnNotice").hidden=selected!=="2027-09-15";
 if(!$("pickupTime").value)warnings.push("請選擇提貨時段");
 $("warnings").textContent=warnings.join("；");}
 $("prevMonth").addEventListener("click",()=>{month=8;calendar();});$("nextMonth").addEventListener("click",()=>{month=9;calendar();});
 [["chooseSix","six"],["chooseFifteen","fifteen"],["chooseBags","bags"]].forEach(([checkId,quantityId])=>{const check=$(checkId),quantity=$(quantityId);check.addEventListener("change",()=>{quantity.disabled=!check.checked;quantity.value=check.checked?"1":"0";calc();if(check.checked)quantity.focus();});});
-["six","fifteen","bags","pickupNote"].forEach(k=>$(k).addEventListener("input",calc));$("pickupTime").addEventListener("change",calc);updatePickupSlots();calendar();calc();
+["six","fifteen","bags","pickupNote"].forEach(k=>$(k).addEventListener("input",calc));["friendDiscount","friendPayment"].forEach(k=>$(k).addEventListener("change",calc));$("pickupTime").addEventListener("change",calc);updatePickupSlots();calendar();calc();
 
 /* 主管展示版：公開 TEST 收單須完成 GAS 部署、安全驗收後，才可設定 endpoint。 */
 const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
@@ -123,7 +125,7 @@ const sj27OrderSections=[...sj27Main.children].filter(el=>el!==sj27ResultPanel);
 document.getElementById('sj27ResultBack').addEventListener('click',()=>{
   const shouldReset=sj27LastOrderSucceeded || (!sj27LastOrderFailed && window.confirm('若下方已顯示「訂單成立成功」，按「確定」會清空資料，方便建立下一筆訂單。\n若訂單尚未成功或不確定，按「取消」可保留資料。'));
   if(shouldReset){
-    ['pickupName','pickupPhone','pickupNote'].forEach(id=>{const el=$(id);if(el)el.value='';});
+    ['pickupName','pickupPhone','pickupNote'].forEach(id=>{const el=$(id);if(el)el.value='';});$('friendDiscount').value='no';$('friendPayment').value='銀行匯款';
     [['chooseSix','six'],['chooseFifteen','fifteen'],['chooseBags','bags']].forEach(([checkId,id])=>{
       const check=$(checkId),el=$(id);
       if(check)check.checked=false;
@@ -162,10 +164,10 @@ function sj27OrderGuard(x){
   return true;
 }
 
-function SJ27_REVIEW_ROWS(x){const a=Number(x.six),b=Number(x.fifteen),bags=Number(x.bags);return [['提貨人姓名',x.name],['提貨人手機',x.phone],['提貨日期',x.date],['取貨時段',x.slot],['訂單內容',[a?'6入 × '+a+'盒':'',b?'15入 × '+b+'盒':'',bags?'不織布提袋 × '+bags+'個':''].filter(Boolean).join('、')],['備註',x.notes||'無'],['訂單總金額','NT$ '+(a*300+b*750+bags*20).toLocaleString('zh-TW')]]}
+function SJ27_REVIEW_ROWS(x){const a=Number(x.six),b=Number(x.fifteen),bags=Number(x.bags);return [['提貨人姓名',x.name],['提貨人手機',x.phone],['提貨日期',x.date],['取貨時段',x.slot],['訂單內容',[a?'6入 × '+a+'盒':'',b?'15入 × '+b+'盒':'',bags?'不織布提袋 × '+bags+'個':''].filter(Boolean).join('、')],['備註',x.notes||'無'],['員工親友',friendInfo()?friendInfo().name+'／'+($('friendDiscount').value==='yes'?'優惠價':'一般價')+'／'+$('friendPayment').value:'一般訂單'],['訂單總金額','NT$ '+(a*(friendInfo()&&$('friendDiscount').value==='yes'?285:300)+b*(friendInfo()&&$('friendDiscount').value==='yes'?720:750)+bags*20).toLocaleString('zh-TW')]]}
 function sj27DemoSubmit(){const msg=$('sj27SendMsg');if(!SJ27_ORDER_ENDPOINT){msg.textContent='訂單服務暫時無法使用';return}const x=SJ27_COLLECT();if(!x.name.trim()||!x.phone.trim()||!x.date||!x.slot){msg.textContent='請完整填寫訂購資料';return}if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂購資料：'+$('warnings').textContent;return}const details=$('sj27ReviewDetails');details.textContent='';try{SJ27_REVIEW_ROWS(x).forEach(([label,value])=>{const div=document.createElement('div'),a=document.createElement('strong'),b=document.createElement('span');div.className='review-row';a.textContent=label;b.textContent=String(value||'—');div.append(a,b);details.append(div)})}catch(e){msg.textContent='無法計算訂單金額，請檢查資料';return}$('sj27Review').showModal()}
 
-const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value,date:selected,slot:$('pickupTime').value,six:$('six').value,fifteen:$('fifteen').value,bags:$('bags').value,notes:$('pickupNote').value});
+const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value,date:selected,slot:$('pickupTime').value,six:$('six').value,fifteen:$('fifteen').value,bags:$('bags').value,notes:$('pickupNote').value,friendDiscount:friendInfo() ? $('friendDiscount').value:'',friendPayment:friendInfo() ? $('friendPayment').value:''});
 (function(){const b=document.querySelector('button.btn[disabled]');if(!b)return;b.disabled=false;b.id='sj27Send';b.textContent='確認送出訂單';b.style.display='block';b.style.marginLeft='auto';b.style.marginRight='auto';b.addEventListener('click',sj27DemoSubmit);const p=document.createElement('p');p.id='sj27SendMsg';p.className='notice';p.textContent='';p.hidden=true;b.after(p);})();
 
 
