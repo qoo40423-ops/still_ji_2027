@@ -78,11 +78,21 @@ $("shippingHelpButton").addEventListener("click",()=>{const open=$("shippingHelp
 const SJ27_ORDER_ENDPOINT='https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec';
 let sj27RequestId='';
 let sj27OrderSubmitting=false;
+let sj27LastOrderSucceeded=false;
 const sj27ResultPanel=document.getElementById('sj27InlineResult');
 const sj27ResultFrame=document.getElementById('sj27ResultFrame');
 const sj27Main=document.querySelector('main');
 const sj27OrderSections=[...sj27Main.children].filter(el=>el!==sj27ResultPanel);
 document.getElementById('sj27ResultBack').addEventListener('click',()=>{
+  if(sj27LastOrderSucceeded){
+    ['receiver','phone','address','taxId'].forEach(id=>{const el=$(id);if(el)el.value='';});
+    ids.forEach(id=>{const el=$(id),check=$('check-'+id);if(check)check.checked=false;if(el){el.value='0';el.disabled=true;}});
+    $('invoice').value='normal';$('arrival').value='any';$('taxField').hidden=true;
+    selected='';month=8;sj27RequestId='';sj27OrderSubmitting=false;
+    sj27LastOrderSucceeded=false;
+    try{sessionStorage.removeItem(sj27SubmissionKey)}catch(e){}
+    calendar();calc();
+  }
   sj27ResultPanel.hidden=true;
   sj27OrderSections.forEach(el=>el.hidden=false);
   window.scrollTo({top:0,behavior:'smooth'});
@@ -93,6 +103,7 @@ window.addEventListener('message',event=>{
   const d=event.data;
   if(!d||d.channel!=='sj27-order-result')return;
   document.getElementById('sj27InlineProgress').textContent=d.ok?'訂單處理完成，請保存下方訂單資訊。':'訂單未完成，請查看下方原因。';
+  sj27LastOrderSucceeded=d.ok===true;
   if(!d.ok){sj27OrderSubmitting=false;try{sessionStorage.removeItem(sj27SubmissionKey)}catch(e){}}
 });
 
