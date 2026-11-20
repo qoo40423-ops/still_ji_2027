@@ -61,7 +61,7 @@ let mixedCutoffNoticeShown=false;
 function notifyMixedCutoff(){const mixed=Number($("four").value)>0&&Number($("fifteenGroup").value)>0;if(mixed&&!mixedCutoffNoticeShown){mixedCutoffNoticeShown=true;alert("出貨日期提醒：6 入 4 盒組最晚於 08/31（二）出貨。\n若您希望 6 入 15 盒組安排於 09/10（五）前出貨，請將 15 盒組另外新增一筆訂單。\n若維持同筆訂單，最晚出貨日仍為 08/31（二）。");}if(!mixed)mixedCutoffNoticeShown=false;}
 function latestDeliveryDate(){return Number($("four").value)>0?"2027-08-31":"2027-09-10";}
 const money=n=>"NT$ "+n.toLocaleString("zh-TW");
-const SJ27_FRIEND_CODES={'0000':'亭霏','0007':'亭緯','5858':'吳董','0001':'玟萱','0002':'同哲'};
+const SJ27_FRIEND_CODES={'0000':'亭霏','0057':'亭緯','0071':'慈儀','5858':'吳董','0001':'玟萱','0002':'同哲'};
 function friendInfo(){const code=$('friendCode').value.trim();return Object.prototype.hasOwnProperty.call(SJ27_FRIEND_CODES,code)?{code,name:SJ27_FRIEND_CODES[code]}:null;}
 function friendDiscountAmount(y){return friendInfo()&&$('friendDiscount').value==='yes' ? y.sixBoxes*15+y.fifteenBoxes*30 : 0;}
 function input(){const x={};ids.forEach(k=>x[k]=$(k).value);x.address=$("address").value;return x;}
