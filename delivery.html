@@ -97,10 +97,33 @@ function sj27SetCalendarStatuses(payload){
   if(selected && sj27CalendarState(selected)==="已額滿"){selected="";}
   calendar();calc();return true;
 }
-function calendar(){if(selected&&selected>latestDeliveryDate())selected="";const x=input(),grid=$("calendarDays");grid.textContent="";$("monthTitle").textContent="2027 年 "+month+" 月";$("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
-const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
-for(let i=0;i<first;i++){const b=document.createElement("span");b.className="day blank";grid.append(b);}
-for(let day=1;day<=max;day++){const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0"),b=document.createElement("button");b.type="button";b.className="day"+(date===selected?" selected":"");const status=sj27CalendarState(date);b.textContent=day;const statusText=document.createElement("small");statusText.className="sj27-day-status";statusText.textContent=status;b.append(statusText);b.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");const weekday=new Date(date+"T00:00:00Z").getUTCDay();const outside=date<"2027-08-01"||date>latestDeliveryDate();b.disabled=outside||weekday===0||weekday===6||status==="已額滿"||status==="尚未開放";b.setAttribute("aria-label",date+" "+status+(b.disabled?" 不可選":""));b.addEventListener("click",()=>{selected=date;calendar();calc();});grid.append(b);}}
+function calendar(){
+  if(selected&&selected>latestDeliveryDate())selected="";
+  const grid=$("calendarDays");grid.textContent="";
+  $("monthTitle").textContent="2027 年 "+month+" 月";
+  $("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
+  const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
+  for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";grid.append(blank);}
+  for(let day=1;day<=max;day++){
+    const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+    const weekday=new Date(date+"T00:00:00Z").getUTCDay();
+    const weekend=weekday===0||weekday===6;
+    const outside=date<"2027-08-01"||date>latestDeliveryDate();
+    const capacityStatus=sj27CalendarState(date);
+    // 訂購規則優先於產能狀態：不能選的日期不得顯示「可訂購」。
+    const status=outside?"尚未開放":weekend?"不開放":capacityStatus;
+    const disabled=outside||weekend||capacityStatus==="已額滿"||capacityStatus==="尚未開放";
+    const button=document.createElement("button");button.type="button";
+    button.className="day"+(date===selected?" selected":"");
+    button.textContent=day;
+    const label=document.createElement("small");label.className="sj27-day-status";label.textContent=status;button.append(label);
+    button.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");
+    button.disabled=disabled;
+    button.setAttribute("aria-label",date+" "+status+(disabled?" 不可選":""));
+    button.addEventListener("click",()=>{selected=date;calendar();calc();});
+    grid.append(button);
+  }
+}
 function row(label,value,extra){const d=document.createElement("div");d.className="sumrow"+(extra?" grand":"");const a=document.createElement("span"),b=document.createElement("span");a.textContent=label;b.textContent=value;d.append(a,b);$("totals").append(d);}
 function calc(){const x=input(),friend=friendInfo();$('friendOptions').hidden=!friend;if(friend)$('friendIdentity').textContent='員工親友：'+friend.name;$("totals").textContent="";const errors=[];try{const y=StillJi2027.calculate(x);const pieces=StillJi2027.piecesForOrder(x);row("6 入禮盒",y.sixBoxes+" 盒");row("15 入禮盒",y.fifteenBoxes+" 盒");row("商品小計",money(y.goods));row("提袋費用",money(y.bagAmount));row("基本運費",money(y.shipping));row("宜花東加價",money(y.remoteSurcharge));row("應付總額",money(y.total-friendDiscountAmount(y)),true);if(pieces>4800)errors.push("本筆訂單超過每日 4,800 顆產能上限");if(!selected)errors.push("請選擇出貨日期");else if(selected>latestDeliveryDate())errors.push("所選商品最晚出貨日為 "+latestDeliveryDate().replace(/-/g,"/")+"，請重新選擇日期");}catch(e){errors.push(e.message);}
 $("chosenDate").textContent=selected?"已選擇出貨日："+selected.replace(/-/g,"/"):"尚未選擇出貨日期";if(selected){const start=new Date(selected+"T00:00:00Z");const format=d=>(d.getUTCMonth()+1)+"/"+d.getUTCDate();const first=new Date(start.getTime()+86400000),last=new Date(start.getTime()+172800000);$("arrivalEstimate").textContent="預計到貨日期："+format(first)+"～"+format(last)+"（出貨後約 1～2 天，實際依物流配送為準）";}else $("arrivalEstimate").textContent="";$("warnings").textContent=errors.join("；");}
