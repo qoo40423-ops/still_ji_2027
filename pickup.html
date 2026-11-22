@@ -84,6 +84,20 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 const $=id=>document.getElementById(id);let month=8,selected="";
 /* S-14｜狀態資料須由 TEST 後端提供；未串接時不假裝有即時庫存。 */
 const SJ27_CALENDAR_STATUS_URL = ""; // 待唯讀 API 驗證後填入
+window.sj27ReceiveCapacity = function(payload){
+  if(!sj27SetCalendarStatuses(payload)){
+    console.warn("月曆狀態資料驗證失敗，維持關閉選取");
+  }
+};
+function sj27LoadCapacity(){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(SJ27_CALENDAR_STATUS_URL))return;
+  const script=document.createElement("script");
+  script.src=SJ27_CALENDAR_STATUS_URL+"?action=capacity-status-2027";
+  script.async=true;
+  script.onerror=()=>console.warn("月曆狀態讀取失敗，維持關閉選取");
+  document.head.append(script);
+}
+document.addEventListener("DOMContentLoaded",sj27LoadCapacity);
 let sj27CalendarStatuses = null;
 function sj27CalendarState(date){
   if(!sj27CalendarStatuses)return "尚未開放";
