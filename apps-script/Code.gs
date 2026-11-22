@@ -177,7 +177,42 @@ function refreshCapacitySummary2027(){
   const lock=LockService.getScriptLock();if(!lock.tryLock(30000))throw Error('系統忙碌');
   try{return refreshCapacitySummary2027_();}finally{lock.releaseLock();}
 }
-/** S-13｜公開月曆資料的唯讀計算核心；VIP 另計，不占一般訂單每日 4800 顆。 * 此函式只回傳日期與狀態，不包含顆數、客資或訂單內容。 * 尚未開放 HTTP doGet；前端不可將此函式視為已上線的 API。 */function publicCapacityStatuses2027(){  const dates={};  for(const name of [SJ27.PICKUP,SJ27.DELIVERY]){    const isPickup=name===SJ27.PICKUP;    sjDataRows_(name).forEach(r=>{      const date=sjDateValue_(r[2]);      if(!/^2027-(08|09)-\\d{2}$/.test(date)||date>'2027-09-15'||!sjStatusActive_(r[isPickup?16:23]))return;      const pieces=Number(r[isPickup?8:11]);      if(!Number.isFinite(pieces)||pieces<0)throw Error('產能資料異常，停止公開狀態計算');      dates[date]=(dates[date]||0)+pieces;    });  }  const result={};  for(const month of [8,9]){    const max=month===8?31:15;    for(let day=1;day<=max;day++){      const date='2027-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');      const remaining=SJ27.LIMIT-(dates[date]||0);      result[date]=remaining<=0?'已額滿':remaining<=SJ27.LIMIT*0.2?'即將額滿':'可訂購';    }  }  return result;}/** 唯讀檢查：不建立、不修改訂單及試算表。 */function inspectPublicCapacityStatuses2027(){  const statuses=publicCapacityStatuses2027();  const values=Object.values(statuses);  const result={mode:'READ ONLY',dates:values.length,allValid:values.every(v=>['可訂購','即將額滿','已額滿'].includes(v)),vipExcluded:true,publicEndpointEnabled:false,writePerformed:false};  Logger.log(JSON.stringify(result));  return result;}
+/** S-13｜月曆唯讀計算核心；VIP 另計，不占一般訂單每日 4800 顆。
+ * 只回傳日期與狀態，不包含顆數、客資或訂單內容。
+ * 尚未開放 HTTP doGet，前端不可視為已上線 API。
+ */
+function publicCapacityStatuses2027(){
+  const dates={};
+  for(const name of [SJ27.PICKUP,SJ27.DELIVERY]){
+    const isPickup=name===SJ27.PICKUP;
+    sjDataRows_(name).forEach(r=>{
+      const date=sjDateValue_(r[2]);
+      if(!/^2027-(08|09)-\d{2}$/.test(date)||date>'2027-09-15'||!sjStatusActive_(r[isPickup?16:23]))return;
+      const pieces=Number(r[isPickup?8:11]);
+      if(!Number.isFinite(pieces)||pieces<0)throw Error('產能資料異常，停止公開狀態計算');
+      dates[date]=(dates[date]||0)+pieces;
+    });
+  }
+  const result={};
+  for(const month of [8,9]){
+    const max=month===8?31:15;
+    for(let day=1;day<=max;day++){
+      const date='2027-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const remaining=SJ27.LIMIT-(dates[date]||0);
+      result[date]=remaining<=0?'已額滿':remaining<=SJ27.LIMIT*0.2?'即將額滿':'可訂購';
+    }
+  }
+  return result;
+}
+/** 唯讀檢查：不建立、不修改訂單及試算表。 */
+function inspectPublicCapacityStatuses2027(){
+  const statuses=publicCapacityStatuses2027();
+  const values=Object.values(statuses);
+  const result={mode:'READ ONLY',dates:values.length,allValid:values.every(v=>['可訂購','即將額滿','已額滿'].includes(v)),vipExcluded:true,publicEndpointEnabled:false,writePerformed:false};
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+
 function capacityForDate2027(date){
   const d=sjDate_(date),u=sjUsage_(d);
   return {date:d,pickup:u.pickup,delivery:u.delivery,used:u.total,remaining:Math.max(0,SJ27.LIMIT-u.total),limit:SJ27.LIMIT,pans:Math.ceil(u.total/60)};
