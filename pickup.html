@@ -17,6 +17,9 @@ button,input,select,textarea{font-size:inherit}
 .pickup-time-column select{width:100%}
 .pickup-time-column .help{margin:12px 0 0}
 @media(max-width:650px){.pickup-datetime-grid{grid-template-columns:1fr;gap:12px}.pickup-time-column{padding:14px}}
+
+/* S-14｜月曆三態，不顯示剩餘數量 */
+.day .sj27-day-status{display:block;font-size:9px;line-height:1.5;white-space:nowrap;font-weight:500}.day.sj27-open .sj27-day-status{color:#52775a}.day.sj27-near .sj27-day-status{color:#9a6a35}.day.sj27-full .sj27-day-status{color:#9c5c5c}.day.sj27-unavailable .sj27-day-status{color:#8b827c}.day.sj27-full{opacity:.55}.day{min-height:49px}
 </style><style id="sj-unified-social-icons">
 footer .social-icons{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;flex-wrap:wrap!important;margin:14px 0 0!important}
 footer .social-icons .social-icon-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;padding:8px 12px!important;margin:0!important;border:1px solid #e6dac9!important;border-radius:999px!important;background:#fffdf9!important;color:#901820!important;text-decoration:none!important;font-size:.83rem!important;line-height:1.4!important;font-weight:400!important}
@@ -79,10 +82,25 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <a class="social-icon-link" href="https://www.instagram.com/still_ji/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17.6" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram</span></a>
 </div></footer><script>
 const $=id=>document.getElementById(id);let month=8,selected="";
+/* S-14｜狀態資料須由 TEST 後端提供；未串接時不假裝有即時庫存。 */
+const SJ27_CALENDAR_STATUS_URL = ""; // 待唯讀 API 驗證後填入
+let sj27CalendarStatuses = null;
+function sj27CalendarState(date){
+  if(!sj27CalendarStatuses)return "尚未開放";
+  return sj27CalendarStatuses[date] || "尚未開放";
+}
+function sj27SetCalendarStatuses(payload){
+  if(!payload || typeof payload!=="object" || Array.isArray(payload))return false;
+  const dates=Object.keys(payload);
+  if(dates.length!==46 || dates.some(d=>!/^2027-(08|09)-\d{2}$/.test(d) || d>"2027-09-15" || !["可訂購","即將額滿","已額滿"].includes(payload[d])))return false;
+  sj27CalendarStatuses=Object.freeze({...payload});
+  if(selected && sj27CalendarState(selected)==="已額滿"){selected="";updatePickupSlots();}
+  calendar();calc();return true;
+}
 function calendar(){const grid=$("calendarDays");grid.textContent="";$("monthTitle").textContent="2027 年 "+month+" 月";$("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
 const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
 for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";grid.append(blank);}
-for(let day=1;day<=max;day++){const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0"),b=document.createElement("button");b.type="button";b.className="day"+(date===selected?" selected":"");b.textContent=day;b.disabled=date>"2027-09-15";b.setAttribute("aria-label",date+(b.disabled?" 不可選":""));b.addEventListener("click",()=>{selected=date;updatePickupSlots();calendar();calc();if(date==="2027-09-15")alert("中秋節當天請於上午 10:00 前完成取件。逾時未取件視同取消，並安排退款事宜。");});grid.append(b);}}
+for(let day=1;day<=max;day++){const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0"),b=document.createElement("button");b.type="button";b.className="day"+(date===selected?" selected":"");const status=sj27CalendarState(date);b.textContent=day;const statusText=document.createElement("small");statusText.className="sj27-day-status";statusText.textContent=status;b.append(statusText);b.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");b.disabled=date>"2027-09-15"||status==="已額滿";b.setAttribute("aria-label",date+" "+status+(b.disabled?" 不可選":""));b.addEventListener("click",()=>{selected=date;updatePickupSlots();calendar();calc();if(date==="2027-09-15")alert("中秋節當天請於上午 10:00 前完成取件。逾時未取件視同取消，並安排退款事宜。");});grid.append(b);}}
 function updatePickupSlots(){
 const select=$("pickupTime"),previous=select.value;
 const special=selected==="2027-09-15";
