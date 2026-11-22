@@ -43,7 +43,7 @@ function managerSnapshot2027(){
  const vipSh=ss.getSheetByName('老闆VIP公關單');
  const vip=vipSh&&vipSh.getLastRow()>1?vipSh.getRange(2,1,vipSh.getLastRow()-1,12).getValues().filter(v=>String(v[0]||'').trim()).map(v=>({id:String(v[0]),date:day(v[2]),shift:String(v[3]),method:String(v[4]),name:String(v[5]),boxes6:Number(v[6])||0,boxes15:Number(v[7])||0,pieces:Number(v[8])||0,status:String(v[10]),note:String(v[11]||'')})):[];
  vip.filter(o=>o.status!=='已取消').forEach(o=>{const d=make(o.date);if(!d.vip)d.vip=empty();add(d.vip,o);add(o.shift==='上午'?d.morning:d.afternoon,o);});
- const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(d=>{Object.values(d.slots).forEach(finish);['morning','afternoon','pickup','delivery','unclassified'].forEach(k=>finish(d[k]));const total=d.pickup.pieces+d.delivery.pieces+(d.vip?d.vip.pieces:0);return {...d,total,pans:Math.ceil(total/60),remaining:Math.max(0,4800-total),limit:4800};});
+ const capacity=Object.values(map).sort((a,b)=>a.date.localeCompare(b.date)).map(d=>{Object.values(d.slots).forEach(finish);['morning','afternoon','pickup','delivery','unclassified'].forEach(k=>finish(d[k]));const total=d.pickup.pieces+d.delivery.pieces;const vipTotal=d.vip?d.vip.pieces:0;return {...d,total,pans:Math.ceil(total/60),remaining:Math.max(0,4800-total),limit:4800,vipTotal,vipPans:Math.ceil(vipTotal/60)};});
  return {generatedAt:stamp(new Date()),pickup,delivery,vip,capacity,counts:{pickup:pickup.length,delivery:delivery.length,pendingReview:pickup.concat(delivery).filter(o=>o.payment==='待核帳').length,unpaid:pickup.concat(delivery).filter(o=>o.payment==='未付款'&&!['已取消','取消','作廢'].includes(o.status)).length}};
 }
 
