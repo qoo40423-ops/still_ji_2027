@@ -69,7 +69,7 @@ function friendInfo(){const code=$('friendCode').value.trim();return Object.prot
 function friendDiscountAmount(y){return friendInfo()&&$('friendDiscount').value==='yes' ? y.sixBoxes*15+y.fifteenBoxes*30 : 0;}
 function input(){const x={};ids.forEach(k=>x[k]=$(k).value);x.address=$("address").value;return x;}
 /* S-14｜狀態資料須由 TEST 後端提供；未串接時不假裝有即時庫存。 */
-const SJ27_CALENDAR_STATUS_URL = ""; // 待唯讀 API 驗證後填入
+const SJ27_CALENDAR_STATUS_URL = "https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec"; // 2027 TEST 唯讀月曆 API
 window.sj27ReceiveCapacity = function(payload){
   if(!sj27SetCalendarStatuses(payload)){
     console.warn("月曆狀態資料驗證失敗，維持關閉選取");
