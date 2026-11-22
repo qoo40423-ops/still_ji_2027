@@ -182,17 +182,34 @@ function refreshCapacitySummary2027(){
  * 尚未開放 HTTP doGet，前端不可視為已上線 API。
  */
 function publicCapacityStatuses2027(){
+  const ss=sjSpreadsheet_();
   const dates={};
-  for(const name of [SJ27.PICKUP,SJ27.DELIVERY]){
-    const isPickup=name===SJ27.PICKUP;
-    sjDataRows_(name).forEach(r=>{
-      const date=sjDateValue_(r[2]);
-      if(!/^2027-(08|09)-\d{2}$/.test(date)||date>'2027-09-15'||!sjStatusActive_(r[isPickup?16:23]))return;
-      const pieces=Number(r[isPickup?8:11]);
-      if(!Number.isFinite(pieces)||pieces<0)throw Error('產能資料異常，停止公開狀態計算');
+  const specs=[
+    {name:'門市自取',pieces:'蛋黃酥顆數',status:'訂單狀態',date:'取貨日期'},
+    {name:'宅配到府',pieces:'蛋黃酥顆數',status:'訂單狀態',date:'出貨日期'}
+  ];
+  specs.forEach(spec=>{
+    const sh=ss.getSheetByName(spec.name);
+    if(!sh)throw Error('找不到工作表：'+spec.name);
+    const width=sh.getLastColumn();
+    const headers=sh.getRange(1,1,1,width).getDisplayValues()[0];
+    const index={};
+    for(const field of ['訂單編號',spec.date,spec.pieces,spec.status]){
+      const matches=headers.map((h,i)=>h===field?i:-1).filter(i=>i>=0);
+      if(matches.length!==1)throw Error(spec.name+' 欄位不存在或重複：'+field);
+      index[field]=matches[0];
+    }
+    if(sh.getLastRow()<2)return;
+    const rows=sh.getRange(2,1,sh.getLastRow()-1,width).getValues();
+    rows.forEach(row=>{
+      if(!String(row[index['訂單編號']]||'').trim())return;
+      const date=sjDateValue_(row[index[spec.date]]);
+      if(!/^2027-(08|09)-\d{2}$/.test(date)||date>'2027-09-15'||!sjStatusActive_(row[index[spec.status]]))return;
+      const raw=row[index[spec.pieces]],pieces=Number(raw);
+      if(raw===''||raw==null||!Number.isSafeInteger(pieces)||pieces<0)throw Error('產能資料異常，停止公開狀態計算');
       dates[date]=(dates[date]||0)+pieces;
     });
-  }
+  });
   const result={};
   for(const month of [8,9]){
     const max=month===8?31:15;
