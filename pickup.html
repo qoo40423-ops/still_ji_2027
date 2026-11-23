@@ -51,7 +51,17 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 .sj-product-preview p{font-size:13px;color:#735b50;margin:4px 0 0}
 .item input[type="number"]:disabled{opacity:.48;background:#f1ece6;cursor:not-allowed}
 @media(max-width:480px){.sj-pickup-product{gap:8px}.sj-preview-trigger{width:35px;height:35px}.sj-pickup-product label{font-size:13px}.sj-product-preview{max-width:100%}}
- .sj-pickup-product label small{font-size:16px;font-weight:700;color:#87374d;line-height:1.65}</style><style id="sj27-order-heading-polish">main > section.panel:first-child > h1{font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-weight:600;letter-spacing:.09em;line-height:1.4;margin-top:22px;margin-bottom:20px}main > section.panel:first-child > p.notice{font-size:15px;line-height:1.9}</style><style>.order-back-link{max-width:1040px;margin:12px auto 18px;padding:0 16px}.order-back-link a{display:inline-block;color:inherit;text-decoration:underline;text-underline-offset:3px}</style></head><body><header><nav class="sj-global-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header><main>
+ .sj-pickup-product label small{font-size:16px;font-weight:700;color:#87374d;line-height:1.65}</style><style id="sj27-order-heading-polish">main > section.panel:first-child > h1{font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;font-weight:600;letter-spacing:.09em;line-height:1.4;margin-top:22px;margin-bottom:20px}main > section.panel:first-child > p.notice{font-size:15px;line-height:1.9}</style><style>.order-back-link{max-width:1040px;margin:12px auto 18px;padding:0 16px}.order-back-link a{display:inline-block;color:inherit;text-decoration:underline;text-underline-offset:3px}</style><style id="sj27-multidate-preview-css">
+.sj27-batch-toolbar{margin:16px 0;padding:16px;border:1px solid #e8dbcf;border-radius:14px;background:#fffaf5}
+.sj27-batch-toolbar p{margin:0 0 12px;font-size:13px;line-height:1.8;color:#806d60}
+.sj27-batch-toolbar button{border:1px solid #803d50;border-radius:999px;padding:10px 18px;background:#fff;color:#803d50;font:600 14px "Noto Serif TC",serif;cursor:pointer}
+.sj27-batch-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+.sj27-batch-lines{margin:12px 0 0;padding:0;list-style:none}
+.sj27-batch-lines li{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #e8dbcf;padding:11px 0;font-size:13px;line-height:1.7}
+.sj27-batch-lines button{border:0;background:transparent;color:#803d50;text-decoration:underline;cursor:pointer;padding:4px 8px}
+.sj27-batch-summary{margin-top:12px;font-weight:700;color:#803d50;line-height:1.8}
+.sj27-batch-locked{padding:12px;border-radius:10px;background:#fff1e9;color:#934d39;font-size:13px;line-height:1.8}
+</style></head><body><header><nav class="sj-global-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header><main>
 <div class="order-back-link"><a href="order.html">← 返回訂購方式</a></div>
 <section class="flow-guide" aria-label="現場自取訂購流程"><h2>現場自取・訂購流程</h2><p>訂單成立後，請依序完成付款及通知；店家確認款項後，依預約時段領取。</p><div class="flow-steps" style="--flow-count:4"><div class="flow-step"><span class="dot">1</span><strong>官網訂購</strong><small>取得訂單編號</small></div><div class="flow-step"><span class="dot">2</span><strong>匯款並通知</strong><small>LINE 提供後五碼</small></div><div class="flow-step"><span class="dot">3</span><strong>店家核帳</strong><small>確認收到款項</small></div><div class="flow-step"><span class="dot">4</span><strong>預約取貨</strong><small>依指定時段領取</small></div></div><div class="flow-alert"><strong class="payment-title">付款提醒</strong><ol class="payment-list"><li>訂單成立後請於 72 小時內完成匯款，並透過官方 LINE 提供訂單編號及匯款帳號後五碼。<div class="remittance-option">或是利用「自取匯款回報」功能回報您的匯款後五碼。<a class="remittance-link" href="remittance.html">自取匯款回報</a></div></li><li>正式訂單成立頁將顯示專屬繳費截止時間；逾期未付款訂單將取消。</li></ol></div></section><section class="panel"><h2>01｜提貨人姓名／手機</h2><div class="form-grid">
 <div class="form-field"><label for="pickupName">提貨人姓名</label><input id="pickupName" autocomplete="name" placeholder="請填寫提貨人姓名"></div>
@@ -219,5 +229,77 @@ const buttons=[...document.querySelectorAll(".sj-preview-trigger")];let selected
 function show(id){const data=items[id];if(!data)return;selected=id;img.src=data.src;img.alt=data.name;name.textContent=data.name;desc.textContent=data.desc;panel.hidden=false;buttons.forEach(b=>b.setAttribute("aria-expanded",String(b.dataset.product===id)));}
 function hide(){selected=null;panel.hidden=true;buttons.forEach(b=>b.setAttribute("aria-expanded","false"));}
 buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.addEventListener("mouseenter",()=>{if(window.matchMedia("(hover:hover) and (pointer:fine)").matches)show(id);});b.addEventListener("focus",()=>show(id));b.addEventListener("click",()=>{if(selected===id)hide();else show(id);});});
+})();
+</script><script id="sj27-multidate-preview-js">
+/* Preview-only: existing single-date submission is deliberately preserved.
+   Multi-date batches are never sent to the legacy single-date backend. */
+(function(){
+ const byId=id=>document.getElementById(id);
+ const dateSection=byId('calendarDays')?.closest('section.panel');
+ const productSection=byId('six')?.closest('section.panel');
+ const send=byId('sj27Send');
+ if(!dateSection||!productSection||!send)return;
+ const toolbar=document.createElement('div');
+ toolbar.className='sj27-batch-toolbar';
+ toolbar.innerHTML='<p>需要不同日期取貨嗎？每個日期請分別選擇時段與數量。下方會合併計算金額；多日期正式送單功能尚在串接中。</p><button type="button" id="sj27AddDate">＋ 儲存此日期並新增取貨日</button><ul class="sj27-batch-lines" id="sj27BatchLines"></ul><div class="sj27-batch-summary" id="sj27BatchSummary"></div><div class="sj27-batch-locked" id="sj27BatchLocked" hidden>多日期訂單目前僅供預覽，尚未開放正式送出。若需先訂購不同日期，請聯繫官方 LINE 客服協助。</div>';
+ dateSection.append(toolbar);
+ const lines=[];let activeIndex=-1;
+ const fields=['six','fifteen','bags'];
+ const money=n=>'NT$ '+n.toLocaleString('zh-TW');
+ function read(){
+   const d={date:typeof selected==='string'?selected:'',slot:byId('pickupTime').value};
+   for(const k of fields)d[k]=Number(byId(k).value)||0;
+   return d;
+ }
+ function valid(d){
+   const pieces=d.six*6+d.fifteen*15;
+   return d.date&&d.slot&&[d.six,d.fifteen,d.bags].every(n=>Number.isSafeInteger(n)&&n>=0)
+    &&pieces>0&&d.bags<=d.six&&((d.six>0&&d.fifteen>0&&pieces>=42)||(d.six>0&&d.fifteen===0&&d.six>=8)||(d.fifteen>0&&d.six===0&&d.fifteen>=3));
+ }
+ function amount(d){return d.six*300+d.fifteen*750+d.bags*20}
+ function reset(){
+   selected='';for(const k of fields){byId(k).value='0';byId(k).disabled=true;}
+   for(const k of ['chooseSix','chooseFifteen','chooseBags'])byId(k).checked=false;
+   byId('pickupTime').value='';updatePickupSlots();calendar();calc();
+ }
+ function restore(d){
+   selected=d.date;month=Number(d.date.slice(5,7));
+   for(const [k,c] of [['six','chooseSix'],['fifteen','chooseFifteen'],['bags','chooseBags']]){
+     byId(k).value=String(d[k]);byId(k).disabled=!d[k];byId(c).checked=Boolean(d[k]);
+   }
+   updatePickupSlots();byId('pickupTime').value=d.slot;calendar();calc();
+ }
+ function draw(){
+   const ul=byId('sj27BatchLines');ul.replaceChildren();
+   lines.forEach((d,i)=>{
+     const li=document.createElement('li'),info=document.createElement('span'),edit=document.createElement('button'),remove=document.createElement('button');
+     info.textContent=d.date.replaceAll('-','/')+'｜'+d.slot+'｜6入 '+d.six+'盒、15入 '+d.fifteen+'盒、提袋 '+d.bags+'個｜'+money(amount(d));
+     edit.type='button';edit.textContent='修改';edit.addEventListener('click',()=>{
+       if(activeIndex>=0){const draft=read();if(valid(draft)&&!lines.some((x,j)=>j!==activeIndex&&x.date===draft.date))lines[activeIndex]=draft;}
+       activeIndex=i;restore(lines[i]);draw();dateSection.scrollIntoView({behavior:'smooth',block:'start'});
+     });
+     remove.type='button';remove.textContent='移除';remove.addEventListener('click',()=>{lines.splice(i,1);if(activeIndex===i){activeIndex=-1;reset()}else if(activeIndex>i)activeIndex--;draw()});
+     li.append(info,edit,remove);ul.append(li);
+   });
+   const total=lines.reduce((n,d)=>n+amount(d),0);
+   byId('sj27BatchSummary').textContent=lines.length?'已儲存 '+lines.length+' 個日期｜合併金額 '+money(total)+'（預覽，未含尚未儲存的日期）':'';
+   const locked=lines.length>0;
+   byId('sj27BatchLocked').hidden=!locked;
+   send.disabled=locked;send.textContent=locked?'多日期送單尚未開放':'確認送出訂單';
+ }
+ byId('sj27AddDate').addEventListener('click',()=>{
+   const d=read();
+   if(!valid(d)){alert('請先完成此日期的時段、商品數量及最低訂購量，再新增取貨日期。');return;}
+   if(lines.some((x,i)=>i!==activeIndex&&x.date===d.date)){alert('相同取貨日期請合併數量，不能重複新增。');return;}
+   if(activeIndex<0&&lines.length>=12){alert('一次最多可選擇 12 個日期。');return;}
+   if(activeIndex>=0)lines[activeIndex]=d;else lines.push(d);
+   activeIndex=-1;reset();draw();
+   dateSection.scrollIntoView({behavior:'smooth',block:'start'});
+ });
+ const oldSend=send.onclick;
+ send.addEventListener('click',e=>{if(lines.length){e.stopImmediatePropagation();e.preventDefault();alert('多日期訂單尚未開放正式送出，請聯繫官方 LINE。')}},true);
+ const observer=new MutationObserver(()=>{if(lines.length&&(!send.disabled||send.textContent!=='多日期送單尚未開放')){send.disabled=true;send.textContent='多日期送單尚未開放'}});
+ observer.observe(send,{attributes:true,childList:true,characterData:true,subtree:true});
+ draw();
 })();
 </script></body></html>
