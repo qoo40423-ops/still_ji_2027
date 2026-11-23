@@ -251,7 +251,7 @@ const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value
 
 
 $('sj27ReviewBack').addEventListener('click',()=>$('sj27Review').close());
-$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='sj27ResultFrame';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);sj27OrderSections.forEach(el=>el.hidden=true);sj27ResultPanel.hidden=false;document.getElementById('sj27InlineProgress').textContent='訂單處理中，請勿重複送出；請等待下方結果顯示。';form.submit();form.remove();$('sj27Review').close();window.scrollTo({top:0,behavior:'smooth'});msg.textContent='訂單結果已在新分頁開啟，請確認是否顯示「訂單成立成功」。若未看到結果，請先查詢訂單，勿重複送出。';});
+$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);sj27OrderSections.forEach(el=>el.hidden=false);sj27ResultPanel.hidden=true;document.getElementById('sj27InlineProgress').textContent='訂單已送往新分頁，請確認結果；不確定是否成立時請先查詢訂單。';form.submit();form.remove();$('sj27Review').close();window.scrollTo({top:0,behavior:'smooth'});msg.textContent='訂單結果已在新分頁開啟，請確認是否顯示「訂單成立成功」。若未看到結果，請先查詢訂單，勿重複送出。';});
 </script><script id="sj-pickup-hover-preview">
 (function(){
 const panel=document.getElementById("sjPickupPreview"),img=document.getElementById("sjPickupPreviewImage"),name=document.getElementById("sjPickupPreviewName"),desc=document.getElementById("sjPickupPreviewDesc");
@@ -311,12 +311,12 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    if(typeof friendInfo==='function'&&friendInfo()){batchHint.textContent='員工親友優惠或特殊付款請聯繫客服，不適用一般多日期合併送單。';return;}
    const total=entries.reduce((a,d)=>a+price(d),0);
    if(!window.confirm('確認建立 '+entries.length+' 筆不同日期訂單，合併匯款 '+money(total)+'？'))return;
-   const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='sj27ResultFrame';form.style.display='none';
+   const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';
    const params={action:'create-batch',website:'stillji2027',name,phone,notes,requestId:batchRequestId,items:JSON.stringify(entries)};
    Object.entries(params).forEach(([key,value])=>{const input=document.createElement('input');input.type='hidden';input.name=key;input.value=String(value);form.append(input)});
    document.body.append(form);batchButton.disabled=true;batchHint.textContent='正在建立批次訂單，請勿重複送出。';
-   sj27OrderSections.forEach(el=>el.hidden=true);sj27ResultPanel.hidden=false;
-   get('sj27InlineProgress').textContent='批次訂單處理中，請等待下方結果顯示。';form.submit();form.remove();window.scrollTo({top:0,behavior:'smooth'});
+   sj27OrderSections.forEach(el=>el.hidden=false);sj27ResultPanel.hidden=true;
+   get('sj27InlineProgress').textContent='批次訂單已送往新分頁，請確認結果；不確定是否成立時請先查詢訂單。';form.submit();form.remove();window.scrollTo({top:0,behavior:'smooth'});
  });
  function render(){
    const host=get('sj27CartItems');host.replaceChildren();
