@@ -126,10 +126,36 @@ function sj27SetCalendarStatuses(payload){
   if(selected && sj27CalendarState(selected)==="已額滿"){selected="";updatePickupSlots();}
   calendar();calc();return true;
 }
-function calendar(){const grid=$("calendarDays");grid.textContent="";$("monthTitle").textContent="2027 年 "+month+" 月";$("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
-const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
-for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";grid.append(blank);}
-for(let day=1;day<=max;day++){const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0"),b=document.createElement("button");b.type="button";b.className="day"+(date===selected?" selected":"");const status=sj27CalendarState(date);b.textContent=day;const statusText=document.createElement("small");statusText.className="sj27-day-status";statusText.textContent=status;b.append(statusText);b.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");b.disabled=date>"2027-09-15"||status==="已額滿"||status==="尚未開放";b.setAttribute("aria-label",date+" "+status+(b.disabled?" 不可選":""));b.addEventListener("click",()=>{selected=date;updatePickupSlots();calendar();calc();if(date==="2027-09-15")alert("中秋節當天請於上午 10:00 前完成取件。逾時未取件視同取消，並安排退款事宜。");});grid.append(b);}}
+function calendar(){
+ const grid=$("calendarDays"),fragment=document.createDocumentFragment();
+ $("monthTitle").textContent="2027 年 "+month+" 月";
+ $("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
+ const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
+ for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";fragment.append(blank);}
+ for(let day=1;day<=max;day++){
+  const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+  const b=document.createElement("button");b.type="button";b.dataset.date=date;
+  b.className="day"+(date===selected?" selected":"");
+  const status=sj27CalendarState(date);b.textContent=day;
+  const statusText=document.createElement("small");statusText.className="sj27-day-status";statusText.textContent=status;b.append(statusText);
+  b.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");
+  b.disabled=date>"2027-09-15"||status==="已額滿"||status==="尚未開放";
+  b.setAttribute("aria-label",date+" "+status+(b.disabled?" 不可選":""));
+  fragment.append(b);
+ }
+ grid.replaceChildren(fragment);
+}
+$("calendarDays").addEventListener("click",event=>{
+ const b=event.target.closest("button.day[data-date]");
+ if(!b||b.disabled)return;
+ const date=b.dataset.date;
+ if(date===selected)return;
+ const previous=$("calendarDays").querySelector(".day.selected");
+ if(previous)previous.classList.remove("selected");
+ b.classList.add("selected");selected=date;updatePickupSlots();calc();
+ if(date==="2027-09-15")alert("中秋節當天請於上午 10:00 前完成取件。逾時未取件視同取消，並安排退款事宜。");
+});
+
 function updatePickupSlots(){
 const select=$("pickupTime"),previous=select.value;
 const special=selected==="2027-09-15";
@@ -146,7 +172,7 @@ const SJ27_FRIEND_CODES={'0000':'亭霏','0057':'亭緯','0071':'慈儀','5858':
 function friendInfo(){const code=$("pickupNote").value.trim();return Object.prototype.hasOwnProperty.call(SJ27_FRIEND_CODES,code)?{code,name:SJ27_FRIEND_CODES[code]}:null;}
 function calc(){const friend=friendInfo();$('friendBankRow').hidden=$('friendPayment').value!=='銀行匯款';$('friendRemitFields').hidden=$('friendPayment').value!=='銀行匯款';const staffPreview=Boolean(friend)&&$("friendDiscount").value==='yes';$("staffPriceNotice").hidden=!friend;if(friend)$("friendIdentity").textContent='員工親友：'+friend.name;const a=Number($("six").value),b=Number($("fifteen").value),bags=Number($("bags").value),warnings=[];$("totals").textContent="";
 if(!Number.isSafeInteger(a)||a<0||!Number.isSafeInteger(b)||b<0||!Number.isSafeInteger(bags)||bags<0){warnings.push("請輸入正確的盒數");}else{const pieces=a*6+b*15;row("6 入禮盒",a+" 盒 × NT$ "+(staffPreview?285:300));row("15 入禮盒",b+" 盒 × NT$ "+(staffPreview?720:750));row("不織布提袋",bags+" 個 × NT$ 20");row("應付總額","NT$ "+(a*(staffPreview?285:300)+b*(staffPreview?720:750)+bags*20).toLocaleString("zh-TW"),true);
-if(pieces>4800)warnings.push("本筆訂單超過每日 4,800 顆上限");
+if(pieces>7500)warnings.push("本筆訂單超過單一時段 7,500 顆上限");
 if(!friend&&pieces>0&&((a>0&&b>0&&pieces<42)||(a>0&&b===0&&a<8)||(b>0&&a===0&&b<3)))warnings.push("未達訂單最小數量標準，僅能現場購買，敬請見諒");
 if(!pieces)warnings.push("請選擇商品數量");if(bags>a)warnings.push("不織布提袋僅適用6入禮盒，加購數量不可超過6入盒數");
 }
