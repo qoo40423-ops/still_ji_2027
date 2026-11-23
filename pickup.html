@@ -133,13 +133,42 @@ function sj27CalendarState(date){
   return sj27CalendarStatuses[date] || "尚未開放";
 }
 function sj27SetCalendarStatuses(payload){
-  if(!payload || typeof payload!=="object" || Array.isArray(payload))return false;
-  const dates=Object.keys(payload);
-  if(dates.length!==46 || dates.some(d=>!/^2027-(08|09)-\d{2}$/.test(d) || d>"2027-09-15" || !["可訂購","即將額滿","已額滿"].includes(payload[d])))return false;
-  sj27CalendarStatuses=Object.freeze({...payload});
-
-  if(selected && sj27CalendarState(selected)==="已額滿"){selected="";updatePickupSlots();}
+ const candidates=[payload,payload?.data,payload?.dates,payload?.statuses,payload?.calendar,payload?.result,payload?.data?.dates,payload?.data?.statuses,payload?.data?.calendar];
+ const required=[];
+ for(let m=8;m<=9;m++)for(let d=1;d<=(m===8?31:15);d++)required.push("2027-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"));
+ const normalize=(raw)=>{
+  if(raw&&typeof raw==="object"){
+   if(raw.status!==undefined)raw=raw.status;
+   else if(raw.label!==undefined)raw=raw.label;
+   else if(raw.state!==undefined)raw=raw.state;
+  }
+  if(raw===true)return "可訂購";
+  if(raw===false)return "已額滿";
+  if(typeof raw!=="string")return null;
+  const value=raw.trim();
+  if(["可訂購","開放","可預訂","available","open"].includes(value))return "可訂購";
+  if(["即將額滿","剩餘不多","near-full","limited"].includes(value))return "即將額滿";
+  if(["已額滿","額滿","售罄","full","sold-out","closed"].includes(value))return "已額滿";
+  if(["尚未開放","未開放","unavailable","not-open"].includes(value))return "尚未開放";
+  return null;
+ };
+ for(const candidate of candidates){
+  if(!candidate||typeof candidate!=="object")continue;
+  const map=Array.isArray(candidate)?Object.fromEntries(candidate.filter(x=>x&&typeof x==="object"&&typeof x.date==="string").map(x=>[x.date,x])):candidate;
+  if(!required.every(date=>Object.prototype.hasOwnProperty.call(map,date)))continue;
+  const result={};let valid=true;
+  for(const date of required){
+   const status=normalize(map[date]);
+   if(!status){valid=false;break;}
+   result[date]=status;
+  }
+  if(!valid)continue;
+  sj27CalendarStatuses=Object.freeze(result);
+  if(selected&&["已額滿","尚未開放"].includes(sj27CalendarState(selected))){selected="";updatePickupSlots();}
   calendar();calc();return true;
+ }
+ console.warn("月曆資料無法解析，請檢查後端回傳結構",payload);
+ return false;
 }
 function calendar(){
  const grid=$("calendarDays");
