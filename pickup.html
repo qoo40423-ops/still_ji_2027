@@ -236,7 +236,7 @@ function hide(){selected=null;panel.hidden=true;buttons.forEach(b=>b.setAttribut
 buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.addEventListener("mouseenter",()=>{if(window.matchMedia("(hover:hover) and (pointer:fine)").matches)show(id);});b.addEventListener("focus",()=>show(id));b.addEventListener("click",()=>{if(selected===id)hide();else show(id);});});
 })();
 </script><script id="sj27-multidate-preview-js">
-/* Front-end preview only. Never submit multi-date data to the legacy endpoint. */
+/* Multi-date form uses create-batch endpoint only; gated off pending TEST acceptance. */
 (function(){
  const get=id=>document.getElementById(id);
  const dateSection=get('calendarDays')?.closest('section.panel');
@@ -249,6 +249,8 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
  cart.innerHTML='<h3>我的取貨清單</h3><p>選好取貨日期、時段及商品後，點選下方「加入取貨清單」。需要不同日期時，再選下一個日期即可。若只訂一個日期，可直接使用原本的確認送出訂單。</p><button type="button" class="sj27-cart-add" id="sj27CartAdd">＋ 加入取貨清單</button><p id="sj27CartMessage" role="status"></p><div id="sj27CartItems"></div><div class="sj27-cart-total" id="sj27CartTotal" hidden></div><div class="sj27-cart-alert" id="sj27CartAlert" hidden>多日期功能目前為前端預覽，尚未開放正式送出。請勿使用單日期送單功能提交多日期訂單；如需先訂購不同日期，請聯繫官方 LINE。</div>';
  productSection.after(cart);
  const entries=[];let editing=-1;
+ const SJ27_BATCH_UI_ENABLED=false; // Only enable after F backend deployment and end-to-end acceptance.
+ const batchRequestId='B'+Date.now().toString(36)+Math.random().toString(36).slice(2,20);
  const price=d=>d.six*300+d.fifteen*750+d.bags*20;
  const money=n=>'NT$ '+n.toLocaleString('zh-TW');
  function current(){return {date:selected,slot:get('pickupTime').value,six:Number(get('six').value),fifteen:Number(get('fifteen').value),bags:Number(get('bags').value)}}
@@ -267,6 +269,26 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    [['six','chooseSix'],['fifteen','chooseFifteen'],['bags','chooseBags']].forEach(([k,c])=>{get(k).value=String(d[k]);get(k).disabled=!d[k];get(c).checked=!!d[k]});
    updatePickupSlots();get('pickupTime').value=d.slot;calendar();calc();
  }
+
+ const batchButton=document.createElement('button');batchButton.type='button';batchButton.className='sj27-cart-add';batchButton.id='sj27BatchSubmit';batchButton.textContent='合併送出多日期訂單';batchButton.disabled=true;
+ const batchHint=document.createElement('p');batchHint.id='sj27BatchHint';batchHint.className='notice';batchHint.textContent='批次送單等待後端驗收，目前不會傳送任何訂單。';
+ cart.append(batchButton,batchHint);
+ batchButton.addEventListener('click',()=>{
+   if(!SJ27_BATCH_UI_ENABLED||entries.length<2)return;
+   if(editing>=0){batchHint.textContent='請先儲存正在修改的日期。';return;}
+   const name=get('pickupName').value.trim(),phone=get('pickupPhone').value.trim(),notes=get('pickupNote').value.trim();
+   if(!name||!sj27ValidContactPhone(phone)){batchHint.textContent='請填寫提貨人姓名與正確的聯絡電話。';return;}
+   if(entries.some(d=>!valid(d))){batchHint.textContent='清單中有不符合訂購規則的日期。';return;}
+   if(typeof friendInfo==='function'&&friendInfo()){batchHint.textContent='員工親友優惠或特殊付款請聯繫客服，不適用一般多日期合併送單。';return;}
+   const total=entries.reduce((a,d)=>a+price(d),0);
+   if(!window.confirm('確認建立 '+entries.length+' 筆不同日期訂單，合併匯款 '+money(total)+'？'))return;
+   const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='sj27ResultFrame';form.style.display='none';
+   const params={action:'create-batch',website:'stillji2027',name,phone,notes,requestId:batchRequestId,items:JSON.stringify(entries)};
+   Object.entries(params).forEach(([key,value])=>{const input=document.createElement('input');input.type='hidden';input.name=key;input.value=String(value);form.append(input)});
+   document.body.append(form);batchButton.disabled=true;batchHint.textContent='正在建立批次訂單，請勿重複送出。';
+   sj27OrderSections.forEach(el=>el.hidden=true);sj27ResultPanel.hidden=false;
+   get('sj27InlineProgress').textContent='批次訂單處理中，請等待下方結果顯示。';form.submit();form.remove();window.scrollTo({top:0,behavior:'smooth'});
+ });
  function render(){
    const host=get('sj27CartItems');host.replaceChildren();
    entries.forEach((d,i)=>{
@@ -291,8 +313,9 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    });
    const total=get('sj27CartTotal');total.hidden=!entries.length;
    total.textContent=entries.length?'已加入 '+entries.length+' 個日期｜合併金額 '+money(entries.reduce((a,d)=>a+price(d),0)):'';
-   get('sj27CartAlert').hidden=entries.length<2;
-   send.disabled=entries.length>=2;send.textContent=entries.length>=2?'多日期正式送單尚未開放':'確認送出訂單';
+   get('sj27CartAlert').hidden=entries.length<2 || SJ27_BATCH_UI_ENABLED;
+   batchButton.disabled=!SJ27_BATCH_UI_ENABLED||entries.length<2||editing>=0;
+   send.disabled=entries.length>0 || editing>=0;send.textContent=entries.length>=2?(SJ27_BATCH_UI_ENABLED?'請使用下方合併送出':'多日期正式送單尚未開放'):entries.length===1?'已加入清單，請使用清單送出':'確認送出訂單';
  }
  get('sj27CartAdd').addEventListener('click',()=>{
    const d=current();
@@ -306,10 +329,10 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
  });
  /* Never let an accidental click submit an incomplete cart or multi-date cart. */
  send.addEventListener('click',e=>{
-   if(entries.length>=2||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27CartMessage').textContent='多日期尚未開放正式送單，請先聯繫客服。';}
+   if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27CartMessage').textContent='多日期尚未開放正式送單，請先聯繫客服。';}
  },true);
  get('sj27ReviewConfirm')?.addEventListener('click',e=>{
-   if(entries.length>=2||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27Review').close();get('sj27CartMessage').textContent='多日期尚未開放正式送單。';}
+   if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27Review').close();get('sj27CartMessage').textContent='多日期尚未開放正式送單。';}
  },true);
  render();
 })();
