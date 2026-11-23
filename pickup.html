@@ -114,6 +114,7 @@ function sj27LoadCapacity(){
 }
 document.addEventListener("DOMContentLoaded",sj27LoadCapacity);
 let sj27CalendarStatuses = null;
+const sj27CalendarCache=new Map();
 function sj27CalendarState(date){
   if(!sj27CalendarStatuses)return "尚未開放";
   return sj27CalendarStatuses[date] || "尚未開放";
@@ -123,15 +124,26 @@ function sj27SetCalendarStatuses(payload){
   const dates=Object.keys(payload);
   if(dates.length!==46 || dates.some(d=>!/^2027-(08|09)-\d{2}$/.test(d) || d>"2027-09-15" || !["可訂購","即將額滿","已額滿"].includes(payload[d])))return false;
   sj27CalendarStatuses=Object.freeze({...payload});
+  sj27CalendarCache.clear();
   if(selected && sj27CalendarState(selected)==="已額滿"){selected="";updatePickupSlots();}
   calendar();calc();return true;
 }
 function calendar(){
- const grid=$("calendarDays"),fragment=document.createDocumentFragment();
+ const grid=$("calendarDays");
+ if(sj27CalendarCache.has(month)){
+   const cached=sj27CalendarCache.get(month);
+   grid.replaceChildren(...cached);
+   const active=grid.querySelector(".day.selected");if(active)active.classList.remove("selected");
+   const next=selected&&grid.querySelector(`button.day[data-date="${selected}"]`);if(next)next.classList.add("selected");
+   $("monthTitle").textContent="2027 年 "+month+" 月";
+   $("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
+   return;
+ }
+ const fragment=document.createDocumentFragment(),nodes=[];
  $("monthTitle").textContent="2027 年 "+month+" 月";
  $("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
  const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
- for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";fragment.append(blank);}
+ for(let i=0;i<first;i++){const blank=document.createElement("span");blank.className="day blank";fragment.append(blank);nodes.push(blank);}
  for(let day=1;day<=max;day++){
   const date="2027-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
   const b=document.createElement("button");b.type="button";b.dataset.date=date;
@@ -141,9 +153,10 @@ function calendar(){
   b.classList.add(status==="已額滿"?"sj27-full":status==="即將額滿"?"sj27-near":status==="可訂購"?"sj27-open":"sj27-unavailable");
   b.disabled=date>"2027-09-15"||status==="已額滿"||status==="尚未開放";
   b.setAttribute("aria-label",date+" "+status+(b.disabled?" 不可選":""));
-  fragment.append(b);
+  fragment.append(b);nodes.push(b);
  }
  grid.replaceChildren(fragment);
+ sj27CalendarCache.set(month,nodes);
 }
 $("calendarDays").addEventListener("click",event=>{
  const b=event.target.closest("button.day[data-date]");
