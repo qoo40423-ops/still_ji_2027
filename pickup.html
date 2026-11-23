@@ -99,80 +99,35 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 const $=id=>document.getElementById(id);let month=8,selected="";
 /* S-14｜狀態資料須由 TEST 後端提供；未串接時不假裝有即時庫存。 */
 const SJ27_CALENDAR_STATUS_URL = "https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec"; // 2027 TEST 唯讀月曆 API
-let sj27CapacityTimer=null;
-function sj27CapacityMessage(message){
- let note=document.getElementById("sj27CapacityNotice");
- if(!note){
-  note=document.createElement("p");note.id="sj27CapacityNotice";note.className="notice";note.setAttribute("role","status");
-  document.getElementById("calendarDays").parentElement.insertAdjacentElement("afterend",note);
- }
- note.textContent=message;note.hidden=!message;
-}
-window.sj27ReceiveCapacity=function(payload){
- clearTimeout(sj27CapacityTimer);
- if(!sj27SetCalendarStatuses(payload)){
-  sj27CapacityMessage("月曆資料格式不符合預期，暫時無法選擇日期。請聯絡店家確認後端設定。");
-  console.warn("月曆資料格式驗證失敗",payload);
- }else{sj27CapacityMessage("");}
+window.sj27ReceiveCapacity = function(payload){
+  if(!sj27SetCalendarStatuses(payload)){
+    console.warn("月曆狀態資料驗證失敗，維持關閉選取");
+  }
 };
 function sj27LoadCapacity(){
- if(!SJ27_CALENDAR_STATUS_URL.startsWith("https://script.google.com/macros/s/"))return;
- sj27CapacityMessage("正在確認可訂購日期…");
- const script=document.createElement("script");
- script.src=SJ27_CALENDAR_STATUS_URL+"?action=capacity-status-2027&callback=sj27ReceiveCapacity&_="+Date.now();
- script.async=true;
- script.onerror=()=>{clearTimeout(sj27CapacityTimer);sj27CapacityMessage("無法連線至月曆後端，日期暫時無法選擇。請稍後再試。");};
- document.head.append(script);
- sj27CapacityTimer=setTimeout(()=>{if(!sj27CalendarStatuses)sj27CapacityMessage("月曆後端沒有回傳有效的開放日期資料；這不是等待時間不足。請檢查 Apps Script 的 capacity-status-2027。");},8000);
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(SJ27_CALENDAR_STATUS_URL))return;
+  const script=document.createElement("script");
+  script.src=SJ27_CALENDAR_STATUS_URL+"?action=capacity-status-2027";
+  script.async=true;
+  script.onerror=()=>console.warn("月曆狀態讀取失敗，維持關閉選取");
+  document.head.append(script);
 }
 document.addEventListener("DOMContentLoaded",sj27LoadCapacity);
 let sj27CalendarStatuses = null;
-
 function sj27CalendarState(date){
   if(!sj27CalendarStatuses)return "尚未開放";
   return sj27CalendarStatuses[date] || "尚未開放";
 }
 function sj27SetCalendarStatuses(payload){
- const candidates=[payload,payload?.data,payload?.dates,payload?.statuses,payload?.calendar,payload?.result,payload?.data?.dates,payload?.data?.statuses,payload?.data?.calendar];
- const required=[];
- for(let m=8;m<=9;m++)for(let d=1;d<=(m===8?31:15);d++)required.push("2027-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0"));
- const normalize=(raw)=>{
-  if(raw&&typeof raw==="object"){
-   if(raw.status!==undefined)raw=raw.status;
-   else if(raw.label!==undefined)raw=raw.label;
-   else if(raw.state!==undefined)raw=raw.state;
-  }
-  if(raw===true)return "可訂購";
-  if(raw===false)return "已額滿";
-  if(typeof raw!=="string")return null;
-  const value=raw.trim();
-  if(["可訂購","開放","可預訂","available","open"].includes(value))return "可訂購";
-  if(["即將額滿","剩餘不多","near-full","limited"].includes(value))return "即將額滿";
-  if(["已額滿","額滿","售罄","full","sold-out","closed"].includes(value))return "已額滿";
-  if(["尚未開放","未開放","unavailable","not-open"].includes(value))return "尚未開放";
-  return null;
- };
- for(const candidate of candidates){
-  if(!candidate||typeof candidate!=="object")continue;
-  const map=Array.isArray(candidate)?Object.fromEntries(candidate.filter(x=>x&&typeof x==="object"&&typeof x.date==="string").map(x=>[x.date,x])):candidate;
-  if(!required.every(date=>Object.prototype.hasOwnProperty.call(map,date)))continue;
-  const result={};let valid=true;
-  for(const date of required){
-   const status=normalize(map[date]);
-   if(!status){valid=false;break;}
-   result[date]=status;
-  }
-  if(!valid)continue;
-  sj27CalendarStatuses=Object.freeze(result);
-  if(selected&&["已額滿","尚未開放"].includes(sj27CalendarState(selected))){selected="";updatePickupSlots();}
+  if(!payload || typeof payload!=="object" || Array.isArray(payload))return false;
+  const dates=Object.keys(payload);
+  if(dates.length!==46 || dates.some(d=>!/^2027-(08|09)-\d{2}$/.test(d) || d>"2027-09-15" || !["可訂購","即將額滿","已額滿"].includes(payload[d])))return false;
+  sj27CalendarStatuses=Object.freeze({...payload});
+  if(selected && sj27CalendarState(selected)==="已額滿"){selected="";updatePickupSlots();}
   calendar();calc();return true;
- }
- console.warn("月曆資料無法解析，請檢查後端回傳結構",payload);
- return false;
 }
 function calendar(){
- const grid=$("calendarDays");
- const fragment=document.createDocumentFragment();
+ const grid=$("calendarDays"),fragment=document.createDocumentFragment();
  $("monthTitle").textContent="2027 年 "+month+" 月";
  $("prevMonth").disabled=month===8;$("nextMonth").disabled=month===9;
  const first=new Date(Date.UTC(2027,month-1,1)).getUTCDay(),max=month===8?31:30;
@@ -189,7 +144,6 @@ function calendar(){
   fragment.append(b);
  }
  grid.replaceChildren(fragment);
-
 }
 $("calendarDays").addEventListener("click",event=>{
  const b=event.target.closest("button.day[data-date]");
