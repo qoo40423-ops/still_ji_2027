@@ -272,7 +272,10 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
 
  const batchButton=document.createElement('button');batchButton.type='button';batchButton.className='sj27-cart-add';batchButton.id='sj27BatchSubmit';batchButton.textContent='合併送出多日期訂單';batchButton.disabled=true;
  const batchHint=document.createElement('p');batchHint.id='sj27BatchHint';batchHint.className='notice';batchHint.textContent='批次送單等待後端驗收，目前不會傳送任何訂單。';
- cart.append(batchButton,batchHint);
+ // Keep batch submission logic without displaying a second action button.
+ batchButton.hidden=true;cart.append(batchButton);
+ const originalSendParent=send.parentElement;
+ originalSendParent.append(batchHint);
  batchButton.addEventListener('click',()=>{
    if(!SJ27_BATCH_UI_ENABLED||entries.length<2)return;
    if(editing>=0){batchHint.textContent='請先儲存正在修改的日期。';return;}
@@ -315,7 +318,10 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    total.textContent=entries.length?'已加入 '+entries.length+' 個日期｜合併金額 '+money(entries.reduce((a,d)=>a+price(d),0)):'';
    get('sj27CartAlert').hidden=entries.length<2 || SJ27_BATCH_UI_ENABLED;
    batchButton.disabled=!SJ27_BATCH_UI_ENABLED||entries.length<2||editing>=0;
-   send.disabled=entries.length>0 || editing>=0;send.textContent=entries.length>=2?(SJ27_BATCH_UI_ENABLED?'請使用下方合併送出':'多日期正式送單尚未開放'):entries.length===1?'已加入清單，請使用清單送出':'確認送出訂單';
+   send.disabled=editing>=0 || (entries.length>0 && (!SJ27_BATCH_UI_ENABLED || entries.length<2));
+   send.textContent=entries.length>=2?'合併送出多日期訂單':entries.length===1?'已加入 1 個日期（請再加入其他日期）':'確認送出訂單';
+   batchHint.hidden=entries.length<2;
+   if(entries.length>=2)batchHint.textContent=SJ27_BATCH_UI_ENABLED?'請確認上方日期與金額，送出後將合併匯款。':'批次送單等待後端驗收，目前不會傳送任何訂單。';
  }
  get('sj27CartAdd').addEventListener('click',()=>{
    const d=current();
@@ -329,7 +335,7 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
  });
  /* Never let an accidental click submit an incomplete cart or multi-date cart. */
  send.addEventListener('click',e=>{
-   if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27CartMessage').textContent='多日期尚未開放正式送單，請先聯繫客服。';}
+   if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();if(SJ27_BATCH_UI_ENABLED&&entries.length>=2&&editing<0){batchButton.click();}else{get('sj27CartMessage').textContent=entries.length===1?'請再加入另一個取貨日期，或移除清單後使用單日期送單。':'多日期送單尚未開放，請先聯繫客服。';}}
  },true);
  get('sj27ReviewConfirm')?.addEventListener('click',e=>{
    if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27Review').close();get('sj27CartMessage').textContent='多日期尚未開放正式送單。';}
