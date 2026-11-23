@@ -275,7 +275,7 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
  cart.innerHTML='<h3>我的取貨清單</h3><p>選好取貨日期、時段及商品後，點選下方「加入取貨清單」。需要不同日期時，再選下一個日期即可。若只訂一個日期，可直接使用原本的確認送出訂單。</p><button type="button" class="sj27-cart-add" id="sj27CartAdd">＋ 加入取貨清單</button><p id="sj27CartMessage" role="status"></p><div id="sj27CartItems"></div><div class="sj27-cart-total" id="sj27CartTotal" hidden></div><div class="sj27-cart-alert" id="sj27CartAlert" hidden>多日期功能目前為前端預覽，尚未開放正式送出。請勿使用單日期送單功能提交多日期訂單；如需先訂購不同日期，請聯繫官方 LINE。</div>';
  productSection.after(cart);
  const entries=[];let editing=-1;
- const SJ27_BATCH_UI_ENABLED=false; // Only enable after F backend deployment and end-to-end acceptance.
+ const SJ27_BATCH_UI_ENABLED=true; // Only enable after F backend deployment and end-to-end acceptance.
  const batchRequestId='B'+Date.now().toString(36)+Math.random().toString(36).slice(2,20);
  const price=d=>d.six*300+d.fifteen*750+d.bags*20;
  const money=n=>'NT$ '+n.toLocaleString('zh-TW');
