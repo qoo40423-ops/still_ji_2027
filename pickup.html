@@ -99,18 +99,31 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 const $=id=>document.getElementById(id);let month=8,selected="";
 /* S-14｜狀態資料須由 TEST 後端提供；未串接時不假裝有即時庫存。 */
 const SJ27_CALENDAR_STATUS_URL = "https://script.google.com/macros/s/AKfycbwN1GzL1EKhaK0A1zkX_lZVYmcQXSYxG4ztDrxkeFJPPosYQgzIxf0DWiRARvzUJnZi6Q/exec"; // 2027 TEST 唯讀月曆 API
-window.sj27ReceiveCapacity = function(payload){
-  if(!sj27SetCalendarStatuses(payload)){
-    console.warn("月曆狀態資料驗證失敗，維持關閉選取");
-  }
+let sj27CapacityTimer=null;
+function sj27CapacityMessage(message){
+ let note=document.getElementById("sj27CapacityNotice");
+ if(!note){
+  note=document.createElement("p");note.id="sj27CapacityNotice";note.className="notice";note.setAttribute("role","status");
+  document.getElementById("calendarDays").parentElement.insertAdjacentElement("afterend",note);
+ }
+ note.textContent=message;note.hidden=!message;
+}
+window.sj27ReceiveCapacity=function(payload){
+ clearTimeout(sj27CapacityTimer);
+ if(!sj27SetCalendarStatuses(payload)){
+  sj27CapacityMessage("月曆資料格式不符合預期，暫時無法選擇日期。請聯絡店家確認後端設定。");
+  console.warn("月曆資料格式驗證失敗",payload);
+ }else{sj27CapacityMessage("");}
 };
 function sj27LoadCapacity(){
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(SJ27_CALENDAR_STATUS_URL))return;
-  const script=document.createElement("script");
-  script.src=SJ27_CALENDAR_STATUS_URL+"?action=capacity-status-2027";
-  script.async=true;
-  script.onerror=()=>console.warn("月曆狀態讀取失敗，維持關閉選取");
-  document.head.append(script);
+ if(!/^https:\\/\\/script\\.google\\.com\\/macros\\/s\\/[A-Za-z0-9_-]+\\/exec$/.test(SJ27_CALENDAR_STATUS_URL))return;
+ sj27CapacityMessage("正在確認可訂購日期…");
+ const script=document.createElement("script");
+ script.src=SJ27_CALENDAR_STATUS_URL+"?action=capacity-status-2027&callback=sj27ReceiveCapacity&_="+Date.now();
+ script.async=true;
+ script.onerror=()=>{clearTimeout(sj27CapacityTimer);sj27CapacityMessage("無法連線至月曆後端，日期暫時無法選擇。請稍後再試。");};
+ document.head.append(script);
+ sj27CapacityTimer=setTimeout(()=>{if(!sj27CalendarStatuses)sj27CapacityMessage("月曆後端沒有回傳有效的開放日期資料；這不是等待時間不足。請檢查 Apps Script 的 capacity-status-2027。");},8000);
 }
 document.addEventListener("DOMContentLoaded",sj27LoadCapacity);
 let sj27CalendarStatuses = null;
