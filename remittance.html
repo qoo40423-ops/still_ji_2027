@@ -35,7 +35,7 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
 <div class="note">回報後將由店家人工核對款項；送出不代表已付款成功。<br>門市現金付款不適用本表單，宅配訂單請依原流程確認宅配單。</div>
 <input type="hidden" name="action" value="pickup-remittance"><input type="hidden" name="website" value="stillji2027"><div style="position:absolute;left:-10000px" aria-hidden="true"><label for="company">公司</label><input id="company" name="company" tabindex="-1" autocomplete="off"></div><button id="submitBtn" type="submit" disabled>送出匯款回報</button><div id="status" role="status" aria-live="polite"></div>
-</form></section></main>
+<input type="hidden" name="responseMode" value="inline-v1"><input type="hidden" name="requestId" id="remitRequestId"></form></section><iframe name="sj27RemitFrame" title="匯款回報結果" hidden></iframe><section id="remitResult" class="panel" hidden aria-live="polite"></section></main>
 <footer>紀家烘焙坊 · STILL JI｜116 年中秋訂購<div class="social-icons">
 <a class="social-icon-link" href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.3c-5.1 0-9.2 3.2-9.2 7.2 0 3.6 3.2 6.5 7.6 7.1l-.6 3.1 4-3.1c4.2-.6 7.4-3.5 7.4-7.1 0-4-4.1-7.2-9.2-7.2Z" fill="currentColor"/><path d="M6.6 9v3.7h2M10 9v3.7m1.8 0V9l2.2 3.7V9m4.1 0h-2.3v3.7h2.3m-2.3-1.9h1.8" stroke="#fff" stroke-width=".75" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>LINE</span></a>
 <a class="social-icon-link" href="https://www.facebook.com/JiPastry" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.1 0 2.25.2 2.25.2v2.47H15.2c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0 0 22 12Z"/></svg><span>Facebook</span></a>
@@ -57,11 +57,12 @@ transferDate.max=taiwanToday();
 orderId.addEventListener('input',()=>{orderId.value=orderId.value.toUpperCase().replace(/\s/g,'')});
 last5.addEventListener('input',()=>{last5.value=last5.value.replace(/\D/g,'').slice(0,5)});
 const validEndpoint=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(TEST_WEB_APP_URL);
-if(validEndpoint){form.action=TEST_WEB_APP_URL;form.method='POST';form.target='_blank';}
+if(validEndpoint){form.action=TEST_WEB_APP_URL;form.method='POST';form.target='sj27RemitFrame';}
 submitBtn.disabled=!(PUBLIC_REMITTANCE_READY&&validEndpoint);
 submitBtn.textContent='送出匯款回報';
 status.textContent=submitBtn.disabled?'匯款回報目前暫不開放，請稍後再試。':'';
 form.addEventListener('submit',event=>{
+  if(submitBtn.disabled){event.preventDefault();return;}
   const id=orderId.value.trim().toUpperCase();
   const normalizedPhone=phone.value.replace(/[\s()－-]/g,'');
   const day=transferDate.value;
@@ -82,7 +83,24 @@ form.addEventListener('submit',event=>{
   orderId.value=id;
   phone.value=normalizedPhone;
   submitBtn.disabled=true;
-  status.textContent='已開啟回報結果頁，請確認結果；若頁面遭阻擋，請勿連續點擊。';
+  pending=crypto.randomUUID();document.getElementById('remitRequestId').value=pending;
+  status.textContent='正在處理匯款回報，請勿關閉頁面或重複送出。';
+  timer=setTimeout(()=>{status.textContent='尚未取得回報結果，請先查詢訂單或聯繫客服，勿重複回報。';},90000);
   // 不自動重新啟用，避免同一頁面連續重送。
+});
+let pending='',timer;
+window.addEventListener('message',e=>{
+ if(!pending||!/^https:\/\/(?:script\.google\.com|script\.googleusercontent\.com|[a-z0-9-]+-script\.googleusercontent\.com)$/.test(e.origin))return;
+ const m=e.data;if(!m||m.type!=='SJ27_ORDER_RESULT_V1'||m.requestId!==pending)return;
+ clearTimeout(timer);pending='';const r=m.result||{};
+ if(r.ok!==true){status.textContent=(r.message||'未取得回報結果')+' 請先查詢訂單或聯繫客服確認；原填寫資料已保留。';return;}
+ form.reset();form.closest('section').hidden=true;
+ document.querySelectorAll('main > .eyebrow,main > h1,main > .intro,main > .delivery-help').forEach(el=>el.hidden=true);
+ const result=document.getElementById('remitResult');result.hidden=false;result.style.textAlign='center';
+ const h=document.createElement('h1');h.textContent='✓ 匯款回報已收到';result.append(h);
+ const p=document.createElement('p');p.textContent=r.message||'已收到匯款回報，請等待店家核帳。';result.append(p);
+ const note=document.createElement('div');note.className='note';note.textContent='目前狀態：待人工核帳。回報成功不代表已完成核帳，請勿重複回報。';result.append(note);
+ for(const [label,url] of [['前往訂單查詢','lookup.html'],['返回首頁','index.html'],['聯繫官方 LINE','https://lin.ee/ifHbhYi']]){const a=document.createElement('a');a.href=url;a.textContent=label;a.style.cssText='display:inline-block;margin:16px 8px 0;color:#803d50;font-weight:600';result.append(a);}
+ window.scrollTo(0,0);
 });
 </script></body></html>
