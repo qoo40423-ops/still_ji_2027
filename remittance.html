@@ -29,7 +29,7 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <header><nav class="sj-global-nav"><a class="brand" href="index.html"><img src="images/stillji-logo-transparent.png" alt="紀家烘焙坊標誌"><span>紀家烘焙坊 · STILL JI</span></a><div class="links"><a href="products.html">產品介紹</a><a href="rules.html">訂購規則</a><a href="order.html">我要訂購</a><a href="lookup.html">訂單查詢</a><a href="remittance.html">自取匯款回報</a></div></nav></header>
 <main><div class="eyebrow">STILL JI · MID-AUTUMN 2027</div><h1>自取匯款回報</h1><p class="intro">完成匯款後，請填寫訂單資料與帳號後五碼。<br><strong class="pickup-only-emphasis">本專區僅供「門市自取」訂單使用。</strong></p><div class="delivery-help" aria-label="宅配匯款通知" style="margin:18px auto 0;padding:15px 17px;border:1px solid #e7d8cb;border-radius:14px;background:#f8f0ea;text-align:center"><p style="margin:0 0 10px;line-height:1.8;font-size:13px;color:#694d43">宅配到府訂單需另行確認宅配單資料。完成匯款後，請改由官方 LINE 通知我們。</p><a href="https://lin.ee/ifHbhYi" target="_blank" rel="noopener" style="display:inline-block;background:#803d50;color:#fff;text-decoration:none;padding:10px 22px;border-radius:999px;font-size:14px;font-weight:600">通知官方 LINE</a></div>
 <section class="panel"><form id="remittanceForm" autocomplete="on">
-<div class="field"><label for="orderId">訂單編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="例如 SJ-58321" autocomplete="off"><div class="hint">請輸入訂單成立時取得的編號。</div></div>
+<div class="field"><label for="orderId">訂單編號／批次編號</label><input id="orderId" name="orderId" maxlength="24" required placeholder="SJ-58321 或 SJB- 開頭的批次編號" autocomplete="off"><div class="hint">一般自取請填寫 SJ- 開頭的訂單編號；多日期合併訂購請填寫 SJB- 開頭的批次編號，整批僅需回報一次。</div></div>
 <div class="field"><label for="phone">訂購聯絡電話</label><input id="phone" name="phone" type="tel" maxlength="30" required placeholder="請輸入訂購時填寫的電話" autocomplete="tel"></div>
 <div class="field"><label for="transferDate">匯款日期</label><input id="transferDate" name="transferDate" type="date" required><div class="hint">請選擇實際完成轉帳的日期，方便店家核對銀行入帳紀錄。</div></div>
 <div class="field"><label for="last5">匯款帳號後五碼</label><input id="last5" name="last5" inputmode="numeric" pattern="[0-9]{5}" minlength="5" maxlength="5" required placeholder="5 位數字" autocomplete="off"><div class="hint">請填寫實際匯款帳號的末五碼，非訂單編號末五碼。</div></div>
@@ -67,8 +67,8 @@ form.addEventListener('submit',event=>{
   const normalizedPhone=phone.value.replace(/[\s()－-]/g,'');
   const day=transferDate.value;
   if(!PUBLIC_REMITTANCE_READY||!validEndpoint){event.preventDefault();status.textContent='匯款回報尚未開放，資料沒有送出。';return;}
-  if(!/^(?:SJ-\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8})$/.test(id)){
-    event.preventDefault();status.textContent='請確認訂單編號格式。';orderId.focus();return;
+  if(!/^(?:SJ-\d{5}|SJ27-[0-9]{6}-[A-F0-9]{8}|SJB-[A-F0-9]{12})$/.test(id)){
+    event.preventDefault();status.textContent='請確認訂單編號或批次編號格式。';orderId.focus();return;
   }
   if(!/^(09\d{8}|0[2-8]\d{7,8}(?:#\d{1,6})?)$/.test(normalizedPhone)){
     event.preventDefault();status.textContent='請輸入訂購時填寫的有效電話。';phone.focus();return;
