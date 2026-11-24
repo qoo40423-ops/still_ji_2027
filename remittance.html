@@ -97,10 +97,10 @@ window.addEventListener('message',e=>{
  form.reset();form.closest('section').hidden=true;
  document.querySelectorAll('main > .eyebrow,main > h1,main > .intro,main > .delivery-help').forEach(el=>el.hidden=true);
  const result=document.getElementById('remitResult');result.hidden=false;result.style.textAlign='center';
- const h=document.createElement('h1');h.textContent='✓ 匯款回報已收到';result.append(h);
- const p=document.createElement('p');p.textContent=r.message||'已收到匯款回報，請等待店家核帳。';result.append(p);
- const note=document.createElement('div');note.className='note';note.textContent='目前狀態：待人工核帳。回報成功不代表已完成核帳，請勿重複回報。';result.append(note);
- for(const [label,url] of [['前往訂單查詢','lookup.html'],['返回首頁','index.html'],['聯繫官方 LINE','https://lin.ee/ifHbhYi']]){const a=document.createElement('a');a.href=url;a.textContent=label;a.style.cssText='display:inline-block;margin:16px 8px 0;color:#803d50;font-weight:600';result.append(a);}
+ const h=document.createElement('h1');h.textContent='✓ 已收到您的匯款回報';result.append(h);
+ for(const line of ['感謝您協助回報，請等待店家核帳','回報成功不代表已完成核帳，請勿重複回報。','紀家烘焙坊感謝您的支持與配合！']){const p=document.createElement('p');p.textContent=line;p.style.cssText='margin:12px 0;line-height:1.9';result.append(p);}
+ const actions=document.createElement('div');actions.style.cssText='display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:28px';
+ for(const [label,url,primary] of [['前往訂單查詢','lookup.html',true],['返回首頁','index.html',false],['聯繫官方 LINE','https://lin.ee/ifHbhYi',false]]){const a=document.createElement('a');a.href=url;a.textContent=label;a.style.cssText='display:inline-flex;align-items:center;justify-content:center;padding:12px 22px;border:1px solid #901820;border-radius:999px;text-decoration:none;font-weight:600;background:'+(primary?'#901820':'transparent')+';color:'+(primary?'#fff':'#901820');actions.append(a);}result.append(actions);
  window.scrollTo(0,0);
 });
 </script></body></html>
