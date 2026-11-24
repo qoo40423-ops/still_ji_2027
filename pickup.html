@@ -389,7 +389,18 @@ window.addEventListener('message',function(e){
  if(!active||!/^https:\/\/(?:script\.google\.com|script\.googleusercontent\.com|[a-z0-9-]+-script\.googleusercontent\.com)$/.test(e.origin))return;
  const m=e.data;if(!m||m.type!=='SJ27_ORDER_RESULT_V1'||m.requestId!==active.id)return;
  const r=m.result||{};clearTimeout(timer);
- if(r.ok!==true){progress().textContent=(r.message||'未取得成功結果')+' 請先查詢或聯繫客服，勿重複送出。';return;}
+ if(r.ok!==true){
+ progress().textContent=r.message||'未取得成功結果';
+ const actions=document.createElement('div');actions.append(link('查詢訂單','lookup.html'),link('聯繫客服','https://lin.ee/ifHbhYi'));
+ if(r.retryable===true){
+ const back=document.createElement('button');back.type='button';back.className='btn';back.textContent='返回表單（保留資料）';
+ back.onclick=()=>{actions.remove();active=null;sj27OrderSubmitting=false;try{sessionStorage.removeItem(sj27SubmissionKey)}catch(e){}
+ for(const id of ['sj27Send','sj27ReviewConfirm','sj27BatchSubmit']){const el=document.getElementById(id);if(el)el.disabled=false;}
+ const msg=document.getElementById('sj27SendMsg');if(msg)msg.textContent='本次尚未建單，請確認資料後重新送出。';
+ [...document.querySelector('main').children].forEach(el=>el.hidden=el===panel());window.scrollTo(0,0);};actions.append(back);
+ }else{progress().textContent+=' 請先查詢或聯繫客服，勿重複送出。';}
+ panel().append(actions);return;
+ }
  const ids=active.batch?r.orderIds:[r.id];
  if(!Array.isArray(ids)||!ids.length||ids.some(x=>typeof x!=='string'||!x)||!Number.isFinite(r.total)||!r.deadline||(active.batch&&!r.batchId)){progress().textContent='訂單結果不完整，請聯繫客服確認，勿重複送出。';return;}
  const main=document.querySelector('main');
