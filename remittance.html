@@ -44,6 +44,8 @@ footer .social-icons .social-icon-link svg path:not([fill]),footer .social-icons
 <script>
 const form=document.getElementById('remittanceForm');
 const orderId=document.getElementById('orderId');
+const incomingId=(new URLSearchParams(location.search).get('orderId')||'').trim().toUpperCase();
+if(/^(?:SJ-\d{5}|SJ27-\d{6}-[A-F0-9]{8}|SJB-[A-F0-9]{12})$/.test(incomingId))orderId.value=incomingId;
 const phone=document.getElementById('phone');
 const last5=document.getElementById('last5');
 const transferDate=document.getElementById('transferDate');
