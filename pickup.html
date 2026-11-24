@@ -405,12 +405,18 @@ window.addEventListener('message',function(e){
  if(!Array.isArray(ids)||!ids.length||ids.some(x=>typeof x!=='string'||!x)||!Number.isFinite(r.total)||!r.deadline||(active.batch&&!r.batchId)){progress().textContent='訂單結果不完整，請聯繫客服確認，勿重複送出。';return;}
  const main=document.querySelector('main');
  [...main.children].filter(el=>el!==panel()).forEach(el=>el.remove());
- const box=document.createElement('div');box.style.cssText='text-align:center;padding:24px 12px';
- const h=document.createElement('h2');h.textContent='✓ '+(active.batch?'多日期':active.kind==='pickup'?'自取':'宅配')+'訂單已成立';box.append(h);
+ const box=document.createElement('div');box.style.cssText='max-width:680px;margin:auto;padding:12px 0 24px;text-align:center';
+ const h=document.createElement('h2');h.textContent='✓ '+(active.batch?'多日期':active.kind==='pickup'?'自取':'宅配')+'訂單已成立';h.style.cssText='color:#8e2935;margin:12px 0';box.append(h);
+ const intro=document.createElement('p');intro.textContent='感謝您的訂購，請妥善保存以下訂單資訊。';box.append(intro);
+ function section(title,bg){const el=document.createElement('section');el.style.cssText='background:'+bg+';border:1px solid #e5d9ca;border-radius:14px;padding:clamp(14px,4vw,26px);margin:20px 0;text-align:left';const t=document.createElement('h3');t.textContent=title;t.style.cssText='color:#79394a;margin:0 0 16px';el.append(t);box.append(el);return el;}
+ function field(host,label,value,large){const row=document.createElement('div');row.style.cssText='display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #e5d9ca';const a=document.createElement('span');a.textContent=label;a.style.color='#78685d';const b=document.createElement('strong');b.textContent=value;b.style.cssText='overflow-wrap:anywhere;'+(large?'font-size:1.5rem;color:#8e2935':'');row.append(a,b);host.append(row);return row;}
+ function copyButton(label,value){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=label;b.style.marginTop='14px';b.onclick=async()=>{try{await navigator.clipboard.writeText(value);b.textContent='已複製';}catch{b.textContent='請手動複製';}};return b;}
+ const info=section('訂單資訊','#fffdf9');
  const lines=[...(active.batch?['批次編號：'+r.batchId]:[]),'訂單編號：'+ids.join('、'),'應付金額：NT$ '+r.total.toLocaleString('zh-TW'),'付款期限：'+r.deadline];
- for(const line of lines){const p=document.createElement('p');p.textContent=line;box.append(p);}
- const copy=document.createElement('button');copy.type='button';copy.className='btn';copy.textContent='複製訂單資訊';copy.onclick=async()=>{try{await navigator.clipboard.writeText(lines.join('\n'));copy.textContent='已複製';}catch{copy.textContent='請手動複製上方資訊';}};box.append(copy);
- const bank=document.createElement('p');bank.textContent='台灣企銀 彰化分行｜代碼 050｜帳號 54012162300｜戶名：紀家烘焙坊吳亭緯';box.append(bank);
+ if(active.batch)field(info,'批次編號',r.batchId);
+ field(info,'訂單編號',ids.join('、'));field(info,'應付金額','NT$ '+r.total.toLocaleString('zh-TW'),true);field(info,'付款期限',r.deadline);info.append(copyButton('複製訂單資訊',lines.join('\n')));
+ const bank=section('銀行匯款資訊','#f5eee4');
+ field(bank,'銀行名稱及分行','台灣企銀 彰化分行');field(bank,'代碼','050');field(bank,'帳號','54012162300',true);bank.append(copyButton('複製帳號','54012162300'));field(bank,'戶名','紀家烘焙坊吳亭緯');
  const hint=document.createElement('p');hint.textContent='請於期限內完成匯款，並透過官方 LINE 提供訂單資訊及匯款後五碼。';box.append(hint,link('聯繫官方 LINE','https://lin.ee/ifHbhYi'),link('查詢訂單','lookup.html'),link('重新訂購',location.pathname));
  panel().replaceChildren(box);active=null;window.scrollTo(0,0);
 });
