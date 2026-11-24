@@ -251,7 +251,7 @@ const SJ27_COLLECT=()=>({name:$('pickupName').value,phone:$('pickupPhone').value
 
 
 $('sj27ReviewBack').addEventListener('click',()=>$('sj27Review').close());
-$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);sj27OrderSections.forEach(el=>el.hidden=false);sj27ResultPanel.hidden=true;document.getElementById('sj27InlineProgress').textContent='訂單已送往新分頁，請確認結果；不確定是否成立時請先查詢訂單。';form.submit();form.remove();$('sj27Review').close();window.scrollTo({top:0,behavior:'smooth'});msg.textContent='訂單結果已在新分頁開啟，請確認是否顯示「訂單成立成功」。若未看到結果，請先查詢訂單，勿重複送出。';});
+$('sj27ReviewConfirm').addEventListener('click',()=>{const x=SJ27_COLLECT();const msg=$('sj27SendMsg');if($('warnings')?.textContent.trim()){msg.textContent='請先修正訂單資料';$('sj27Review').close();return}const btn=$('sj27ReviewConfirm');if(!sj27OrderGuard(x)){msg.textContent='這筆訂單剛剛已送出，請先查看訂單結果或使用訂單查詢，避免重複下單。';$('sj27Review').close();return;}btn.disabled=true;btn.textContent='訂單處理中，請勿重複送出';$('sj27Send').disabled=true;if(!sj27RequestId)sj27RequestId='W'+Date.now().toString(36)+Math.random().toString(36).slice(2,16);const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='sj27ResultFrame';form.style.display='none';const params={...x,kind:'pickup',website:'stillji2027',action:'create-order',requestId:sj27RequestId};for(const [key,value] of Object.entries(params)){const el=document.createElement('input');el.type='hidden';el.name=key;el.value=String(value);form.append(el)}document.body.append(form);if(window.sj27InlineStart(form,params))form.submit();form.remove();$('sj27Review').close();window.scrollTo({top:0,behavior:'smooth'});msg.textContent='訂單處理中，請勿重複送出。';});
 </script><script id="sj-pickup-hover-preview">
 (function(){
 const panel=document.getElementById("sjPickupPreview"),img=document.getElementById("sjPickupPreviewImage"),name=document.getElementById("sjPickupPreviewName"),desc=document.getElementById("sjPickupPreviewDesc");
@@ -311,12 +311,11 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    if(typeof friendInfo==='function'&&friendInfo()){batchHint.textContent='員工親友優惠或特殊付款請聯繫客服，不適用一般多日期合併送單。';return;}
    const total=entries.reduce((a,d)=>a+price(d),0);
    if(!window.confirm('確認建立 '+entries.length+' 筆不同日期訂單，合併匯款 '+money(total)+'？'))return;
-   const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='_blank';form.style.display='none';
+   const form=document.createElement('form');form.method='POST';form.action=SJ27_ORDER_ENDPOINT;form.target='sj27ResultFrame';form.style.display='none';
    const params={action:'create-batch',website:'stillji2027',name,phone,notes,requestId:batchRequestId,items:JSON.stringify(entries)};
    Object.entries(params).forEach(([key,value])=>{const input=document.createElement('input');input.type='hidden';input.name=key;input.value=String(value);form.append(input)});
    document.body.append(form);batchButton.disabled=true;batchHint.textContent='正在建立批次訂單，請勿重複送出。';
-   sj27OrderSections.forEach(el=>el.hidden=false);sj27ResultPanel.hidden=true;
-   get('sj27InlineProgress').textContent='批次訂單已送往新分頁，請確認結果；不確定是否成立時請先查詢訂單。';form.submit();form.remove();window.scrollTo({top:0,behavior:'smooth'});
+   send.disabled=true;if(window.sj27InlineStart(form,params))form.submit();form.remove();window.scrollTo({top:0,behavior:'smooth'});
  });
  function render(){
    const host=get('sj27CartItems');host.replaceChildren();
@@ -367,5 +366,42 @@ buttons.forEach(b=>{const id=b.dataset.product;const row=b.closest(".item");row.
    if(entries.length>0||editing>=0){e.preventDefault();e.stopImmediatePropagation();get('sj27Review').close();get('sj27CartMessage').textContent='多日期尚未開放正式送單。';}
  },true);
  render();
+})();
+</script><script>
+(function(){
+let active=null,timer;
+const panel=()=>document.getElementById('sj27InlineResult');
+const progress=()=>document.getElementById('sj27InlineProgress');
+function link(label,href){const a=document.createElement('a');a.textContent=label;a.href=href;a.className='btn';a.style.margin='8px';return a;}
+window.sj27InlineStart=function(form,params){
+ if(active)return false;
+ active={id:params.requestId,kind:params.kind,batch:params.action==='create-batch'};
+ const input=document.createElement('input');input.type='hidden';input.name='responseMode';input.value='inline-v1';form.append(input);
+ form.target='sj27ResultFrame';
+ document.getElementById('sj27ResultFrame').style.display='none';
+ document.getElementById('sj27ResultBack').hidden=true;
+ [...document.querySelector('main').children].forEach(el=>el.hidden=el!==panel());
+ progress().textContent='訂單處理中，請勿關閉頁面或重複送出。';
+ timer=setTimeout(()=>{progress().textContent='尚未取得訂單結果，請先查詢訂單或聯繫客服，勿重複送出。';},90000);
+ return true;
+};
+window.addEventListener('message',function(e){
+ if(!active||!/^https:\/\/(?:script\.google\.com|script\.googleusercontent\.com|[a-z0-9-]+-script\.googleusercontent\.com)$/.test(e.origin))return;
+ const m=e.data;if(!m||m.type!=='SJ27_ORDER_RESULT_V1'||m.requestId!==active.id)return;
+ const r=m.result||{};clearTimeout(timer);
+ if(r.ok!==true){progress().textContent=(r.message||'未取得成功結果')+' 請先查詢或聯繫客服，勿重複送出。';return;}
+ const ids=active.batch?r.orderIds:[r.id];
+ if(!Array.isArray(ids)||!ids.length||ids.some(x=>typeof x!=='string'||!x)||!Number.isFinite(r.total)||!r.deadline||(active.batch&&!r.batchId)){progress().textContent='訂單結果不完整，請聯繫客服確認，勿重複送出。';return;}
+ const main=document.querySelector('main');
+ [...main.children].filter(el=>el!==panel()).forEach(el=>el.remove());
+ const box=document.createElement('div');box.style.cssText='text-align:center;padding:24px 12px';
+ const h=document.createElement('h2');h.textContent='✓ '+(active.batch?'多日期':active.kind==='pickup'?'自取':'宅配')+'訂單已成立';box.append(h);
+ const lines=[...(active.batch?['批次編號：'+r.batchId]:[]),'訂單編號：'+ids.join('、'),'應付金額：NT$ '+r.total.toLocaleString('zh-TW'),'付款期限：'+r.deadline];
+ for(const line of lines){const p=document.createElement('p');p.textContent=line;box.append(p);}
+ const copy=document.createElement('button');copy.type='button';copy.className='btn';copy.textContent='複製訂單資訊';copy.onclick=async()=>{try{await navigator.clipboard.writeText(lines.join('\n'));copy.textContent='已複製';}catch{copy.textContent='請手動複製上方資訊';}};box.append(copy);
+ const bank=document.createElement('p');bank.textContent='台灣企銀 彰化分行｜代碼 050｜帳號 54012162300｜戶名：紀家烘焙坊吳亭緯';box.append(bank);
+ const hint=document.createElement('p');hint.textContent='請於期限內完成匯款，並透過官方 LINE 提供訂單資訊及匯款後五碼。';box.append(hint,link('聯繫官方 LINE','https://lin.ee/ifHbhYi'),link('查詢訂單','lookup.html'),link('重新訂購',location.pathname));
+ panel().replaceChildren(box);active=null;window.scrollTo(0,0);
+});
 })();
 </script></body></html>
